@@ -103,6 +103,8 @@ def main(argv=None):
         with open("/usr/share/dict/words") as f:
             words = filter(lambda w: len(w) == 5,
                            [s.strip() for s in f.readlines()])
+            # Remove proper nouns
+            words = filter(lambda w: w[0] in string.ascii_lowercase, words)
     except FileNotFoundError:
         print("Dictionary not found")
         return(1)
