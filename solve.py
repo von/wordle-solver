@@ -51,10 +51,10 @@ class Wordle:
                 f += f"    if '{c}' in w:\n"
                 f += "        return False\n"
             elif w > 0:
-                f += f"    if w.count('{c}') < {g + o}:\n"
+                f += f"    if w.count('{c}') != {g + o}:\n"
                 f += "        return False\n"
             else:
-                f += f"    if w.count('{c}') != {g + o}:\n"
+                f += f"    if w.count('{c}') < {g + o}:\n"
                 f += "        return False\n"
         f += "    return True\n"
         loc = locals()
