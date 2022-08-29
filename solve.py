@@ -14,7 +14,7 @@ class Wordle:
         if len(self.results) != 5:
             raise RuntimeError(f"Illegal length for response: {response}")
         self.by_char = {}
-        # Create diction with characters for keys and an array of results
+        # Create dictionary with characters for keys and an array of results
         # as the value
         for c, r in zip(self.guess, self.results):
             if r not in ("G", "O", "W"):
@@ -35,7 +35,8 @@ class Wordle:
     def filter(self):
         """Create and return a filter function"""
         f = "def filter(w):\n"
-        # Handle Green letters
+        # Handle Green and Orange results telling us certain places
+        # must or must not be certain letters
         for i, c in enumerate(self.guess):
             if self.results[i] == "G":
                 f += f"    if w[{i}] != '{c}':\n"
@@ -43,17 +44,24 @@ class Wordle:
             elif self.results[i] == "O":
                 f += f"    if w[{i}] == '{c}':\n"
                 f += "         return False\n"
+        # Walk each character in the guess and process the results
         for c, r in self.by_char.items():
             g = r.count("G")
             o = r.count("O")
             w = r.count("W")
             if w == len(r):
+                # No hits, if this character appears in a word, it's
+                # not a match.
                 f += f"    if '{c}' in w:\n"
                 f += "        return False\n"
             elif w > 0:
+                # Hits with one or more miss, we know exactly how many times
+                # this character has to appear in the answer
                 f += f"    if w.count('{c}') != {g + o}:\n"
                 f += "        return False\n"
             else:
+                # All hits, no misses. We only know the minimum
+                # number of times this character appears inthe answer
                 f += f"    if w.count('{c}') < {g + o}:\n"
                 f += "        return False\n"
         f += "    return True\n"
