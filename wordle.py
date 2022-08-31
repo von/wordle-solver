@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Given a Wordle guess and response, print all possible matches."""
 import argparse
+import random
 import string
 import sys
 
@@ -14,6 +15,10 @@ class Wordle:
         # for a given word for it to be a valid possible answer to
         # the puzzle
         self.filters = []
+        # Parameters
+        #
+        # Maximum number of guesses in a game
+        self.guess_limit = 6
 
     # Create filters as closures to force early binding
     # See https://docs.python-guide.org/writing/gotchas/#late-binding-closures
@@ -107,6 +112,46 @@ class Wordle:
         # Return list of all words for which all filters return True
         return [w for w in self.words if all([f(w) for f in self.filters])]
 
+    @staticmethod
+    def generate_response(word, guess):
+        """Given a word and a guess, generate a response string"""
+        letters = list(word)
+        response = ["W", "W", "W", "W", "W"]
+        # First determine all the correct letters
+        # Remove them from letters to avoid them being double counted.
+        for i, l in enumerate(list(guess)):
+            if letters[i] == l:
+                response[i] = "G"
+                letters[i] = None
+        # Now find any letters that match remaining letters but are in
+        # the wrong place. Remove letters as we match to them as to not
+        # double count them.
+        for i, l in enumerate(list(guess)):
+            if response[i] == "G":
+                continue
+            if l in letters:
+                response[i] = "O"
+                letters[letters.index(l)] = None
+        success = response.count("G") == 5
+        return (success, "".join(response))
+
+    def play(self):
+        """Play a game"""
+        guess_num = 1
+        word = random.choice(self.words)
+        while guess_num <= self.guess_limit:
+            print("Your guess?")
+            guess = sys.stdin.readline().strip()
+            guess_num += 1
+            success, response = self.generate_response(word, guess)
+            if success:
+                print("Success!")
+                break
+            else:
+                print(response)
+        if not success:
+            print(f"Sorry, you have run out of guesses. The word was {word}")
+
 
 def make_argparser():
     """Return arparse.ArgumentParser instance"""
@@ -126,20 +171,41 @@ def make_argparser():
                                  action="store_true", default=False,
                                  help="run quietly")
     parser.add_argument("--version", action="version", version="%(prog)s 1.0")
-    parser.add_argument("word", metavar="word", type=str, nargs=1,
-                        help="guessed word")
-    parser.add_argument("result", metavar="result", type=str, nargs=1,
-                        help="result encoded as Gs, Os, and Ws (e.g. OWWGO)")
+
+    subparsers = parser.add_subparsers(help='sub-command help')
+
+    parser_play = subparsers.add_parser('play', help=cmd_play.__doc__)
+    parser_play.set_defaults(func=cmd_play)
+
+    parser_process = subparsers.add_parser('process', help=cmd_process.__doc__)
+    parser_process.set_defaults(func=cmd_process)
+    parser_process.add_argument("word", metavar="word", type=str, nargs=1,
+                                help="guessed word")
+    parser_process.add_argument(
+        "result", metavar="result", type=str, nargs=1,
+        help="result encoded as Gs, Os, and Ws (e.g. OWWGO)")
+
     return parser
+
+
+def cmd_play(w, args):
+    """Play wordle"""
+    w.play()
+    return(0)
+
+
+def cmd_process(w, args):
+    """Process a guess and response"""
+    w.process_guess(args.word[0], args.result[0])
+    print("\n".join(list(w.possible_words())))
+    return(0)
 
 
 def main(argv=None):
     parser = make_argparser()
     args = parser.parse_args(argv if argv else sys.argv[1:])
     w = Wordle()
-    w.process_guess(args.word[0], args.result[0])
-    print("\n".join(list(w.possible_words())))
-    return(0)
+    return args.func(w, args)
 
 
 if __name__ == "__main__":
