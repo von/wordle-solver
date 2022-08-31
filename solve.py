@@ -1,73 +1,111 @@
 #!/usr/bin/env python3
 """Given a Wordle guess and response, print all possible matches."""
 import argparse
+import string
 import sys
 
 
 class Wordle:
 
-    def __init__(self, guess, response):
-        self.guess = list(guess)
-        if len(self.guess) != 5:
-            raise RuntimeError(f"Illegal length for word: {guess}")
-        self.results = list(response)
-        if len(self.results) != 5:
+    def __init__(self):
+        # List of valid words
+        self.words = self.load_word_list()
+        # Filters is a list of functions which must return True
+        # for a given word for it to be a valid possible answer to
+        # the puzzle
+        self.filters = []
+
+    # Create filters as closures to force early binding
+    # See https://docs.python-guide.org/writing/gotchas/#late-binding-closures
+    @staticmethod
+    def filter_index_eq(i, c):
+        """Return a filter that requires index i to be character c"""
+        return lambda w: w[i] == c
+
+    @staticmethod
+    def filter_index_ne(i, c):
+        """Return a filter that requires index i not to be character c"""
+        return lambda w: w[i] != c
+
+    @staticmethod
+    def filter_not(c):
+        """Return a filter that requires word not to contain letter c"""
+        return lambda w: c not in w
+
+    @staticmethod
+    def filter_count_eq(c, n):
+        """Return a filter that requires letter c n times"""
+        return lambda w: w.count(c) == n
+
+    @staticmethod
+    def filter_count_ge(c, n):
+        """Return a filter that requires letter c at least n times"""
+        return lambda w: w.count(c) >= n
+
+    def load_word_list(self):
+        """Load and return a list of words"""
+        try:
+            with open("/usr/share/dict/words") as f:
+                words = filter(lambda w: len(w) == 5,
+                               [s.strip() for s in f.readlines()])
+        except FileNotFoundError:
+            raise RuntimeError("Dictionary not found")
+        # Remove proper nouns
+        words = filter(lambda w: w[0] in string.ascii_lowercase, words)
+        return list(words)
+
+    def process_guess(self, word, response):
+        """Process a guess (a word and a response)
+
+        word is a five-letter word
+        response is five characters: G, O, or W"""
+        letters = list(word)
+        if len(letters) != 5:
+            raise RuntimeError(f"Illegal length for word: {word}")
+        responses = list(response)
+        if len(responses) != 5:
             raise RuntimeError(f"Illegal length for response: {response}")
-        self.by_char = {}
+        response_by_char = {}
         # Create dictionary with characters for keys and an array of results
         # as the value
-        for c, r in zip(self.guess, self.results):
+        for c, r in zip(letters, responses):
             if r not in ("G", "O", "W"):
                 raise RuntimeError(f"Illegal response: {response}")
-            v = self.by_char.get(c, [])
+            v = response_by_char.get(c, [])
             v.append(r)
-            self.by_char[c] = v
-
-    def greens(self):
-        return [c for c, r in zip(self.guess, self.results) if r == "G"]
-
-    def oranges(self):
-        return [c for c, r in zip(self.guess, self.results) if r == "O"]
-
-    def whites(self):
-        return [c for c, r in zip(self.guess, self.results) if r == "W"]
-
-    def filter(self):
-        """Create and return a filter function"""
-        f = "def filter(w):\n"
+            response_by_char[c] = v
         # Handle Green and Orange results telling us certain places
         # must or must not be certain letters
-        for i, c in enumerate(self.guess):
-            if self.results[i] == "G":
-                f += f"    if w[{i}] != '{c}':\n"
-                f += "         return False\n"
-            elif self.results[i] == "O":
-                f += f"    if w[{i}] == '{c}':\n"
-                f += "         return False\n"
-        # Walk each character in the guess and process the results
-        for c, r in self.by_char.items():
-            g = r.count("G")
-            o = r.count("O")
-            w = r.count("W")
-            if w == len(r):
+        for i, c in enumerate(letters):
+            if responses[i] == "G":
+                self.filters.append(self.filter_index_eq(i, c))
+            elif responses[i] == "O":
+                self.filters.append(self.filter_index_ne(i, c))
+        # Walk each character in the guess and process how many times
+        # it appears
+        for c, r in response_by_char.items():
+            green = r.count("G")
+            orange = r.count("O")
+            white = r.count("W")
+            if white == len(r):
                 # No hits, if this character appears in a word, it's
                 # not a match.
-                f += f"    if '{c}' in w:\n"
-                f += "        return False\n"
-            elif w > 0:
+                self.filters.append(self.filter_not(c))
+            elif white > 0:
                 # Hits with one or more miss, we know exactly how many times
                 # this character has to appear in the answer
-                f += f"    if w.count('{c}') != {g + o}:\n"
-                f += "        return False\n"
+                self.filters.append(
+                        self.filter_count_eq(c, green + orange))
             else:
                 # All hits, no misses. We only know the minimum
                 # number of times this character appears inthe answer
-                f += f"    if w.count('{c}') < {g + o}:\n"
-                f += "        return False\n"
-        f += "    return True\n"
-        loc = locals()
-        exec(f, globals(), loc)
-        return loc["filter"]
+                self.filters.append(
+                    self.filter_count_ge(c, green + orange))
+
+    def possible_words(self):
+        """Return a list of possible words given processed guesses"""
+        # Return list of all words for which all filters return True
+        return [w for w in self.words if all([f(w) for f in self.filters])]
 
 
 def make_argparser():
@@ -98,19 +136,9 @@ def make_argparser():
 def main(argv=None):
     parser = make_argparser()
     args = parser.parse_args(argv if argv else sys.argv[1:])
-    w = Wordle(args.word[0], args.result[0])
-    try:
-        with open("/usr/share/dict/words") as f:
-            words = filter(lambda w: len(w) == 5,
-                           [s.strip() for s in f.readlines()])
-            # Remove proper nouns
-            words = filter(lambda w: w[0] in string.ascii_lowercase, words)
-    except FileNotFoundError:
-        print("Dictionary not found")
-        return(1)
-    f = w.filter()
-    possible = filter(f, words)
-    print("\n".join(list(possible)))
+    w = Wordle()
+    w.process_guess(args.word[0], args.result[0])
+    print("\n".join(list(w.possible_words())))
     return(0)
 
 
