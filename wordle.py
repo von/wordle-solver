@@ -175,8 +175,7 @@ class Wordle:
         guess_num = 1
         word = random.choice(self.words)
         while guess_num <= self.guess_limit:
-            print("Your guess?")
-            guess = sys.stdin.readline().strip()
+            guess = input(f"Your guess ({guess_num}/{self.guess_limit})? ")
             guess_num += 1
             success, response = self.generate_response(word, guess)
             if success:
