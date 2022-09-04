@@ -8,6 +8,8 @@ import sys
 
 
 class AssistCmd(cmd.Cmd):
+    """Command loop for 'assist'"""
+
     intro = "Welcome to Wordle assist. Enter 'help' for help."
     prompt = "> "
 
