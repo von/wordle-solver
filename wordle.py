@@ -1,9 +1,43 @@
 #!/usr/bin/env python3
 """Given a Wordle guess and response, print all possible matches."""
 import argparse
+import cmd
 import random
 import string
 import sys
+
+
+class AssistCmd(cmd.Cmd):
+    intro = "Welcome to Wordle assist. Enter 'help' for help."
+    prompt = "> "
+
+    def __init__(self, wordle):
+        super().__init__()
+        self.w = wordle
+
+    def do_list(self, arg):
+        """List all possible words"""
+        print("\n".join(list(self.w.possible)))
+
+    def do_random(self, arg):
+        """Print a random possible word"""
+        print(random.choice(self.w.possible))
+
+    def do_quit(self, arg):
+        """Quit"""
+        return True
+
+    def default(self, line):
+        words = line.split()
+        if len(words) != 2:
+            return super().default(line)
+        try:
+            self.w.process_guess(words[0], words[1])
+        except RuntimeError as e:
+            print(f"Error: {e}")
+            return
+        p = len(self.w.possible)
+        print(f"{p} possible word{'s' if p > 1 else ''}")
 
 
 class Wordle:
@@ -11,6 +45,8 @@ class Wordle:
     def __init__(self):
         # List of valid words
         self.words = self.load_word_list()
+        # Possible words given any processing
+        self.possible = self.words
         # Filters is a list of functions which must return True
         # for a given word for it to be a valid possible answer to
         # the puzzle
@@ -79,13 +115,14 @@ class Wordle:
             v = response_by_char.get(c, [])
             v.append(r)
             response_by_char[c] = v
+        filters = []
         # Handle Green and Orange results telling us certain places
         # must or must not be certain letters
         for i, c in enumerate(letters):
             if responses[i] == "G":
-                self.filters.append(self.filter_index_eq(i, c))
+                filters.append(self.filter_index_eq(i, c))
             elif responses[i] == "O":
-                self.filters.append(self.filter_index_ne(i, c))
+                filters.append(self.filter_index_ne(i, c))
         # Walk each character in the guess and process how many times
         # it appears
         for c, r in response_by_char.items():
@@ -95,22 +132,20 @@ class Wordle:
             if white == len(r):
                 # No hits, if this character appears in a word, it's
                 # not a match.
-                self.filters.append(self.filter_not(c))
+                filters.append(self.filter_not(c))
             elif white > 0:
                 # Hits with one or more miss, we know exactly how many times
                 # this character has to appear in the answer
-                self.filters.append(
+                filters.append(
                         self.filter_count_eq(c, green + orange))
             else:
                 # All hits, no misses. We only know the minimum
                 # number of times this character appears inthe answer
-                self.filters.append(
+                filters.append(
                     self.filter_count_ge(c, green + orange))
-
-    def possible_words(self):
-        """Return a list of possible words given processed guesses"""
-        # Return list of all words for which all filters return True
-        return [w for w in self.words if all([f(w) for f in self.filters])]
+        self.possible = [w for w in self.possible
+                         if all([f(w) for f in filters])]
+        self.filters.extend(filters)
 
     @staticmethod
     def generate_response(word, guess):
@@ -152,6 +187,10 @@ class Wordle:
         if not success:
             print(f"Sorry, you have run out of guesses. The word was {word}")
 
+    def assist(self):
+        """Assist in playing Wordle"""
+        AssistCmd(self).cmdloop()
+
 
 def make_argparser():
     """Return arparse.ArgumentParser instance"""
@@ -177,6 +216,9 @@ def make_argparser():
     parser_play = subparsers.add_parser('play', help=cmd_play.__doc__)
     parser_play.set_defaults(func=cmd_play)
 
+    parser_assist = subparsers.add_parser('assist', help=cmd_assist.__doc__)
+    parser_assist.set_defaults(func=cmd_assist)
+
     parser_process = subparsers.add_parser('process', help=cmd_process.__doc__)
     parser_process.set_defaults(func=cmd_process)
     parser_process.add_argument("word", metavar="word", type=str, nargs=1,
@@ -197,7 +239,13 @@ def cmd_play(w, args):
 def cmd_process(w, args):
     """Process a guess and response"""
     w.process_guess(args.word[0], args.result[0])
-    print("\n".join(list(w.possible_words())))
+    print("\n".join(list(w.possible)))
+    return(0)
+
+
+def cmd_assist(w, args):
+    """Assst with playing Wordle"""
+    w.assist()
     return(0)
 
 
