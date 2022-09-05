@@ -102,10 +102,10 @@ class Wordle:
 
         word is a five-letter word
         response is five characters: G, O, or W"""
-        letters = list(word)
+        letters = list(word.lower())
         if len(letters) != 5:
             raise RuntimeError(f"Illegal length for word: {word}")
-        responses = list(response)
+        responses = list(response.upper())
         if len(responses) != 5:
             raise RuntimeError(f"Illegal length for response: {response}")
         response_by_char = {}
