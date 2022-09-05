@@ -42,6 +42,43 @@ class AssistCmd(cmd.Cmd):
         print(f"{p} possible word{'s' if p > 1 else ''}")
 
 
+class PlayCmd(cmd.Cmd):
+    """Command loop for 'play'"""
+
+    intro = "Welcome to Wordle"
+
+    def __init__(self, wordle):
+        super().__init__()
+        self.w = wordle
+        self.guess_num = 1
+        self.word = random.choice(self.w.words)
+        self.prompt = f"Your guess ({self.guess_num}/{self.w.guess_limit})? "
+
+    def do_quit(self, arg):
+        """Quit"""
+        return True
+
+    def default(self, line):
+        words = line.split()
+        if len(words) != 1:
+            return super().default(line)
+        guess = words[0]
+        if len(guess) != 5:
+            print("Guess must be a 5-letter word")
+            return
+        self.guess_num += 1
+        success, response = self.w.generate_response(self.word, guess)
+        if success:
+            print("Success!")
+            return True
+        print(response)
+        if self.guess_num > self.w.guess_limit:
+            print("Sorry, you have run out of guesses."
+                  f" The word was {self.word}")
+            return True
+        self.prompt = f"Your guess ({self.guess_num}/{self.w.guess_limit})? "
+
+
 class Wordle:
 
     def __init__(self):
@@ -174,19 +211,7 @@ class Wordle:
 
     def play(self):
         """Play a game"""
-        guess_num = 1
-        word = random.choice(self.words)
-        while guess_num <= self.guess_limit:
-            guess = input(f"Your guess ({guess_num}/{self.guess_limit})? ")
-            guess_num += 1
-            success, response = self.generate_response(word, guess)
-            if success:
-                print("Success!")
-                break
-            else:
-                print(response)
-        if not success:
-            print(f"Sorry, you have run out of guesses. The word was {word}")
+        PlayCmd(self).cmdloop()
 
     def assist(self):
         """Assist in playing Wordle"""
