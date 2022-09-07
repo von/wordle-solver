@@ -37,6 +37,10 @@ class AssistCmd(cmd.Cmd):
         """Quit"""
         return True
 
+    def do_dump(self, arg):
+        """Dump wordle state"""
+        print(self.w.dump())
+
     def default(self, line):
         words = line.split()
         if len(words) != 2:
@@ -245,6 +249,13 @@ class Wordle:
     def assist(self):
         """Assist in playing Wordle"""
         AssistCmd(self).cmdloop()
+
+    def dump(self):
+        """Return our state as a string"""
+        s = ""
+        for letter, weight in self.letter_knowledge.items():
+            s += f"{letter}: {weight}\n"
+        return s
 
 
 def make_argparser():
