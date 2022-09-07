@@ -160,7 +160,7 @@ class Wordle:
         words = filter(lambda w: w[0] in string.ascii_lowercase, words)
         return list(words)
 
-    def process_guess(self, word, response):
+    def process_guess(self, word, response):  # noqa - too complex
         """Process a guess (a word and a response)
 
         word is a five-letter word
