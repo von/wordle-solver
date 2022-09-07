@@ -25,6 +25,14 @@ class AssistCmd(cmd.Cmd):
         """Print a random possible word"""
         print(random.choice(self.w.possible))
 
+    def do_random_weighted(self, arg):
+        """Print a random word selected based on weighting of what we know"""
+        def weight(word):
+            return sum([self.w.letter_knowledge[letter]
+                        for letter in list(word)])
+        weights = [weight(word) for word in self.w.words]
+        print(random.choices(self.w.words, weights)[0])
+
     def do_quit(self, arg):
         """Quit"""
         return True
@@ -81,6 +89,16 @@ class PlayCmd(cmd.Cmd):
 
 class Wordle:
 
+    # Values for letter_knowledge. Also weights for word selection.
+    #
+    # We know nothing about if/where the letter appears
+    NO_KNOWLEDGE = .2
+    # We know something about if/where the letter appears
+    # but we don't know we have complete knowledge.
+    SOME_KNOWLEDGE = .1
+    # We know everywhere the letter appears
+    COMPLETE_KNOWLEDGE = 0
+
     def __init__(self):
         # List of valid words
         self.words = self.load_word_list()
@@ -90,6 +108,10 @@ class Wordle:
         # for a given word for it to be a valid possible answer to
         # the puzzle
         self.filters = []
+        # What we know about the letters
+        self.letter_knowledge = {}
+        for letter in string.ascii_lowercase:
+            self.letter_knowledge[letter] = self.NO_KNOWLEDGE
         # Parameters
         #
         # Maximum number of guesses in a game
@@ -182,6 +204,13 @@ class Wordle:
                 # number of times this character appears inthe answer
                 filters.append(
                     self.filter_count_ge(c, green + orange))
+            # Figure out what we know about this letter
+            # If all greens and at least one white, we know everything
+            # else we just know something.
+            if white > 0 and white + green == len(r):
+                self.letter_knowledge[c] = self.COMPLETE_KNOWLEDGE
+            elif self.letter_knowledge[c] != self.COMPLETE_KNOWLEDGE:
+                self.letter_knowledge[c] = self.SOME_KNOWLEDGE
         self.possible = [w for w in self.possible
                          if all([f(w) for f in filters])]
         self.filters.extend(filters)
