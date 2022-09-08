@@ -103,6 +103,13 @@ class Wordle:
     # We know everywhere the letter appears
     COMPLETE_KNOWLEDGE = 0
 
+    # Words dict/words the NYT doesn't consider to be words
+    nyt_non_words = [
+        "rokee",
+        "skewl",
+        "yabbi"
+    ]
+
     def __init__(self):
         # List of valid words
         self.words = self.load_word_list()
@@ -152,12 +159,17 @@ class Wordle:
         """Load and return a list of words"""
         try:
             with open("/usr/share/dict/words") as f:
-                words = filter(lambda w: len(w) == 5,
-                               [s.strip() for s in f.readlines()])
+                words = [s.strip() for s in f.readlines()]
         except FileNotFoundError:
             raise RuntimeError("Dictionary not found")
-        # Remove proper nouns
-        words = filter(lambda w: w[0] in string.ascii_lowercase, words)
+
+        def filt(w):
+            return (len(w) == 5 and
+                    # Remove proper nouns
+                    w[0] in string.ascii_lowercase and
+                    # Remove words NYT doesn't consider words
+                    w not in self.nyt_non_words)
+        words = filter(filt, words)
         return list(words)
 
     def process_guess(self, word, response):  # noqa - too complex
