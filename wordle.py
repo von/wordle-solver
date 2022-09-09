@@ -15,23 +15,23 @@ class AssistCmd(cmd.Cmd):
 
     def __init__(self, wordle):
         super().__init__()
-        self.w = wordle
+        self.s = Solver()
 
     def do_list(self, arg):
         """List all possible words"""
-        print("\n".join(list(self.w.possible)))
+        print("\n".join(list(self.s.possible)))
 
     def do_random(self, arg):
         """Print a random possible word"""
-        print(random.choice(self.w.possible))
+        print(random.choice(self.s.possible))
 
     def do_random_weighted(self, arg):
         """Print a random word selected based on weighting of what we know"""
         def weight(word):
-            return sum([self.w.letter_knowledge[letter]
+            return sum([self.s.letter_knowledge[letter]
                         for letter in list(word)])
-        weights = [weight(word) for word in self.w.words]
-        print(random.choices(self.w.words, weights)[0])
+        weights = [weight(word) for word in self.s.words]
+        print(random.choices(self.s.words, weights)[0])
 
     def do_quit(self, arg):
         """Quit"""
@@ -39,18 +39,18 @@ class AssistCmd(cmd.Cmd):
 
     def do_dump(self, arg):
         """Dump wordle state"""
-        print(self.w.dump())
+        print(self.s.dump())
 
     def default(self, line):
         words = line.split()
         if len(words) != 2:
             return super().default(line)
         try:
-            self.w.process_guess(words[0], words[1])
+            self.s.process_guess(words[0], words[1])
         except RuntimeError as e:
             print(f"Error: {e}")
             return
-        p = len(self.w.possible)
+        p = len(self.s.possible)
         print(f"{p} possible word{'s' if p > 1 else ''}")
 
 
@@ -63,7 +63,7 @@ class PlayCmd(cmd.Cmd):
         super().__init__()
         self.w = wordle
         self.guess_num = 1
-        self.word = random.choice(self.w.words)
+        self.word = random.choice(self.w.word_list())
         self.prompt = f"Your guess ({self.guess_num}/{self.w.guess_limit})? "
 
     def do_quit(self, arg):
@@ -93,6 +93,63 @@ class PlayCmd(cmd.Cmd):
 
 class Wordle:
 
+    # Words dict/words the NYT doesn't consider to be words
+    nyt_non_words = [
+        "rokee",
+        "skewl",
+        "yabbi"
+    ]
+
+    guess_limit = 6
+
+    @classmethod
+    def word_list(cls):
+        """Load and return a list of words"""
+        try:
+            with open("/usr/share/dict/words") as f:
+                words = [s.strip() for s in f.readlines()]
+        except FileNotFoundError:
+            raise RuntimeError("Dictionary not found")
+
+        def filt(w):
+            return (len(w) == 5 and
+                    # Remove proper nouns
+                    w[0] in string.ascii_lowercase and
+                    # Remove words NYT doesn't consider words
+                    w not in cls.nyt_non_words)
+        words = filter(filt, words)
+        return list(words)
+
+    @staticmethod
+    def generate_response(word, guess):
+        """Given a word and a guess, generate a response string"""
+        letters = list(word)
+        response = ["W", "W", "W", "W", "W"]
+        # First determine all the correct letters
+        # Remove them from letters to avoid them being double counted.
+        for i, l in enumerate(list(guess)):
+            if letters[i] == l:
+                response[i] = "G"
+                letters[i] = None
+        # Now find any letters that match remaining letters but are in
+        # the wrong place. Remove letters as we match to them as to not
+        # double count them.
+        for i, l in enumerate(list(guess)):
+            if response[i] == "G":
+                continue
+            if l in letters:
+                response[i] = "O"
+                letters[letters.index(l)] = None
+        success = response.count("G") == 5
+        return (success, "".join(response))
+
+    def play(self):
+        """Play a game"""
+        PlayCmd(self).cmdloop()
+
+
+class Solver:
+
     # Values for letter_knowledge. Also weights for word selection.
     #
     # We know nothing about if/where the letter appears
@@ -103,16 +160,8 @@ class Wordle:
     # We know everywhere the letter appears
     COMPLETE_KNOWLEDGE = 0
 
-    # Words dict/words the NYT doesn't consider to be words
-    nyt_non_words = [
-        "rokee",
-        "skewl",
-        "yabbi"
-    ]
-
     def __init__(self):
-        # List of valid words
-        self.words = self.load_word_list()
+        self.words = Wordle.word_list()
         # Possible words given any processing
         self.possible = self.words
         # Filters is a list of functions which must return True
@@ -123,10 +172,6 @@ class Wordle:
         self.letter_knowledge = {}
         for letter in string.ascii_lowercase:
             self.letter_knowledge[letter] = self.NO_KNOWLEDGE
-        # Parameters
-        #
-        # Maximum number of guesses in a game
-        self.guess_limit = 6
 
     # Create filters as closures to force early binding
     # See https://docs.python-guide.org/writing/gotchas/#late-binding-closures
@@ -154,23 +199,6 @@ class Wordle:
     def filter_count_ge(c, n):
         """Return a filter that requires letter c at least n times"""
         return lambda w: w.count(c) >= n
-
-    def load_word_list(self):
-        """Load and return a list of words"""
-        try:
-            with open("/usr/share/dict/words") as f:
-                words = [s.strip() for s in f.readlines()]
-        except FileNotFoundError:
-            raise RuntimeError("Dictionary not found")
-
-        def filt(w):
-            return (len(w) == 5 and
-                    # Remove proper nouns
-                    w[0] in string.ascii_lowercase and
-                    # Remove words NYT doesn't consider words
-                    w not in self.nyt_non_words)
-        words = filter(filt, words)
-        return list(words)
 
     def process_guess(self, word, response):  # noqa - too complex
         """Process a guess (a word and a response)
@@ -231,33 +259,6 @@ class Wordle:
                          if all([f(w) for f in filters])]
         self.filters.extend(filters)
 
-    @staticmethod
-    def generate_response(word, guess):
-        """Given a word and a guess, generate a response string"""
-        letters = list(word)
-        response = ["W", "W", "W", "W", "W"]
-        # First determine all the correct letters
-        # Remove them from letters to avoid them being double counted.
-        for i, l in enumerate(list(guess)):
-            if letters[i] == l:
-                response[i] = "G"
-                letters[i] = None
-        # Now find any letters that match remaining letters but are in
-        # the wrong place. Remove letters as we match to them as to not
-        # double count them.
-        for i, l in enumerate(list(guess)):
-            if response[i] == "G":
-                continue
-            if l in letters:
-                response[i] = "O"
-                letters[letters.index(l)] = None
-        success = response.count("G") == 5
-        return (success, "".join(response))
-
-    def play(self):
-        """Play a game"""
-        PlayCmd(self).cmdloop()
-
     def assist(self):
         """Assist in playing Wordle"""
         AssistCmd(self).cmdloop()
@@ -316,14 +317,16 @@ def cmd_play(w, args):
 
 def cmd_process(w, args):
     """Process a guess and response"""
-    w.process_guess(args.word[0], args.result[0])
-    print("\n".join(list(w.possible)))
+    s = Solver()
+    s.process_guess(args.word[0], args.result[0])
+    print("\n".join(list(s.possible)))
     return(0)
 
 
 def cmd_assist(w, args):
     """Assst with playing Wordle"""
-    w.assist()
+    s = Solver()
+    s.assist()
     return(0)
 
 
