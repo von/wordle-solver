@@ -16,22 +16,15 @@ class AssistCmd(cmd.Cmd):
     def __init__(self, wordle):
         super().__init__()
         self.s = Solver()
+        self.guess_num = 1
 
     def do_list(self, arg):
         """List all possible words"""
         print("\n".join(list(self.s.possible)))
 
-    def do_random(self, arg):
-        """Print a random possible word"""
-        print(random.choice(self.s.possible))
-
-    def do_random_weighted(self, arg):
-        """Print a random word selected based on weighting of what we know"""
-        def weight(word):
-            return sum([self.s.letter_knowledge[letter]
-                        for letter in list(word)])
-        weights = [weight(word) for word in self.s.words]
-        print(random.choices(self.s.words, weights)[0])
+    def do_guess(self, arg):
+        """Print a guess"""
+        print(self.s.generate_guess(self.guess_num))
 
     def do_quit(self, arg):
         """Quit"""
@@ -52,6 +45,7 @@ class AssistCmd(cmd.Cmd):
             return
         p = len(self.s.possible)
         print(f"{p} possible word{'s' if p > 1 else ''}")
+        self.guess_num += 1
 
 
 class PlayCmd(cmd.Cmd):
@@ -202,6 +196,19 @@ class Solver:
     def filter_count_ge(c, n):
         """Return a filter that requires letter c at least n times"""
         return lambda w: w.count(c) >= n
+
+    def generate_guess(self, guess_num):
+        """Generate a guess given what we know and guess number"""
+        if len(self.possible) == 1:
+            return self.possible[0]
+        elif guess_num < Wordle.guess_limit:
+            def weight(word):
+                return sum([self.letter_knowledge[letter]
+                            for letter in list(word)])
+            weights = [weight(word) for word in self.words]
+            return random.choices(self.words, weights)[0]
+        else:
+            return random.choice(self.possible)
 
     def process_guess(self, word, response):  # noqa - too complex
         """Process a guess (a word and a response)
