@@ -95,8 +95,11 @@ class Wordle:
 
     # Words dict/words the NYT doesn't consider to be words
     nyt_non_words = [
+        "bensh",
+        "kusam",
         "rokee",
         "skewl",
+        "tungo",
         "yabbi"
     ]
 
