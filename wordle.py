@@ -306,6 +306,15 @@ def make_argparser():
 
     subparsers = parser.add_subparsers(help='sub-command help')
 
+    parser_auto = subparsers.add_parser('auto', help=cmd_auto.__doc__)
+    parser_auto.set_defaults(func=cmd_auto)
+    parser_auto.add_argument("-w", "--word",
+                             action="store", default=None,
+                             help="specify word to guess")
+    parser_auto.add_argument("-n", "--num_games",
+                             action="store", default=100, type=int,
+                             help="number of games to play")
+
     parser_play = subparsers.add_parser('play', help=cmd_play.__doc__)
     parser_play.set_defaults(func=cmd_play)
 
@@ -335,6 +344,34 @@ def cmd_process(w, args):
     s.process_guess(args.word[0], args.result[0])
     print("\n".join(list(s.possible)))
     return(0)
+
+
+def cmd_auto(w, args):
+    """Automatically play numerous games and report how we do"""
+    results = []
+    for game in range(args.num_games):
+        print(f"Game {game}...")
+        word = args.word if args.word else random.choice(w.word_list())
+        s = Solver()
+        for guess_num in range(w.guess_limit):
+            guess = s.generate_guess(guess_num + 1)
+            success, response = w.generate_response(word, guess)
+            if success:
+                results.append(guess_num)
+                break
+            s.process_guess(guess, response)
+        else:
+            results.append(w.guess_limit)
+        if response == "GGGGG":
+            print(f"   ...success in {guess_num+1} guesses")
+        else:
+            print("   ...failed.")
+    tally = {}
+    for result in results:
+        tally[result] = tally.get(result, 0) + 1
+    for n in range(w.guess_limit):
+        print(f"{n+1} guesses: {tally.get(n, 0)}")
+    print(f"Failures: {tally.get(w.guess_limit,0)}")
 
 
 def cmd_assist(w, args):
