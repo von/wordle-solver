@@ -392,6 +392,8 @@ def cmd_auto(w, args):
         s = Solver()
         for guess_num in range(w.guess_limit):
             guess = s.generate_guess(guess_num + 1)
+            if args.debug:
+                print(f"Guessing {guess}")
             success, response = w.generate_response(word, guess)
             if success:
                 results.append(guess_num)
