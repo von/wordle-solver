@@ -193,6 +193,8 @@ class Solver:
         self.letter_knowledge = {}
         for letter in string.ascii_lowercase:
             self.letter_knowledge[letter] = self.NO_KNOWLEDGE
+        # Create self.letter_weights and self.word_weights
+        self.generate_weights()
 
     # Create filters as closures to force early binding
     # See https://docs.python-guide.org/writing/gotchas/#late-binding-closures
@@ -221,26 +223,25 @@ class Solver:
         """Return a filter that requires letter c at least n times"""
         return lambda w: w.count(c) >= n
 
+    def generate_weights(self):
+        """Update self.letter_weights and self.word_weights"""
+        self.letter_weights = collections.Counter()
+        for word in self.possible:
+            self.letter_weights.update(word)
+        for letter, weight in self.letter_knowledge.items():
+            self.letter_weights[letter] *= weight
+        self.word_weights = dict(zip(
+            self.possible,
+            [sum([self.letter_weights[letter] for letter in set(w)])
+             for w in self.possible]))
+
     def generate_guess(self, guess_num):
         """Generate a guess given what we know and guess number"""
         if len(self.possible) == 1:
             return self.possible[0]
         elif guess_num < Wordle.guess_limit:
-            letter_weights = collections.Counter()
-            for word in self.possible:
-                letter_weights.update(word)
-            for letter, weight in self.letter_knowledge.items():
-                letter_weights[letter] *= weight
-
-            def weight(word):
-                return sum([letter_weights[letter]
-                            for letter in list(word)])
-
-            weights = dict(zip(self.words,
-                               [weight(word) for word in self.words]))
-            guess = max(weights, key=weights.get)
+            guess = max(self.word_weights, key=self.word_weights.get)
             return(guess)
-            # return random.choices(self.words, weights)[0]
         else:
             return random.choice(self.possible)
 
@@ -302,6 +303,7 @@ class Solver:
         self.possible = [w for w in self.possible
                          if all([f(w) for f in filters])]
         self.filters.extend(filters)
+        self.generate_weights()
 
     def assist(self):
         """Assist in playing Wordle"""
