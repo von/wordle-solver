@@ -2,6 +2,7 @@
 """Given a Wordle guess and response, print all possible matches."""
 import argparse
 import cmd
+import collections
 import random
 import string
 import sys
@@ -173,7 +174,7 @@ class Solver:
     # Values for letter_knowledge. Also weights for word selection.
     #
     # We know nothing about if/where the letter appears
-    NO_KNOWLEDGE = .2
+    NO_KNOWLEDGE = 1
     # We know something about if/where the letter appears
     # but we don't know we have complete knowledge.
     SOME_KNOWLEDGE = .1
@@ -225,11 +226,21 @@ class Solver:
         if len(self.possible) == 1:
             return self.possible[0]
         elif guess_num < Wordle.guess_limit:
+            letter_weights = collections.Counter()
+            for word in self.possible:
+                letter_weights.update(word)
+            for letter, weight in self.letter_knowledge.items():
+                letter_weights[letter] *= weight
+
             def weight(word):
-                return sum([self.letter_knowledge[letter]
+                return sum([letter_weights[letter]
                             for letter in list(word)])
-            weights = [weight(word) for word in self.words]
-            return random.choices(self.words, weights)[0]
+
+            weights = dict(zip(self.words,
+                               [weight(word) for word in self.words]))
+            guess = max(weights, key=weights.get)
+            return(guess)
+            # return random.choices(self.words, weights)[0]
         else:
             return random.choice(self.possible)
 
