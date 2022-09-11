@@ -4,6 +4,7 @@ import argparse
 import cmd
 import collections
 import random
+import statistics
 import string
 import sys
 
@@ -398,14 +399,17 @@ def cmd_auto(w, args):
         else:
             results.append(w.guess_limit)
         if response == "GGGGG":
-            print(f"   ...success in {guess_num+1} guesses")
+            print(f"   ...got {word} in {guess_num+1} guesses")
         else:
-            print("   ...failed.")
+            print(f"   ...failed to get {word}.")
     tally = {}
     for result in results:
         tally[result] = tally.get(result, 0) + 1
     for n in range(w.guess_limit):
         print(f"{n+1} guesses: {tally.get(n, 0)}")
+    average = statistics.fmean([result+1 for result in results
+                                if result < w.guess_limit])
+    print(f"Average: {average}")
     print(f"Failures: {tally.get(w.guess_limit,0)}")
 
 
