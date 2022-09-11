@@ -34,6 +34,19 @@ class AssistCmd(cmd.Cmd):
         """Dump wordle state"""
         print(self.s.dump())
 
+    def do_remove(self, arg):
+        """Remove a word from consideration"""
+        print(f"Removing {arg}")
+        try:
+            self.s.words.remove(arg)
+        except ValueError:
+            print(f"{arg} not in list")
+        try:
+            self.s.possible.remove(arg)
+        except ValueError:
+            # May already have been removed
+            pass
+
     def default(self, line):
         words = line.split()
         if len(words) != 2:
