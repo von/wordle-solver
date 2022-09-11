@@ -66,11 +66,11 @@ class PlayCmd(cmd.Cmd):
 
     intro = "Welcome to Wordle"
 
-    def __init__(self, wordle):
+    def __init__(self, wordle, word=None):
         super().__init__()
         self.w = wordle
         self.guess_num = 1
-        self.word = random.choice(self.w.word_list())
+        self.word = word if word else random.choice(self.w.word_list())
         self.prompt = f"Your guess ({self.guess_num}/{self.w.guess_limit})? "
 
     def do_quit(self, arg):
@@ -163,9 +163,9 @@ class Wordle:
         success = response.count("G") == 5
         return (success, "".join(response))
 
-    def play(self):
+    def play(self, word=None):
         """Play a game"""
-        PlayCmd(self).cmdloop()
+        PlayCmd(self, word=word).cmdloop()
 
 
 class Solver:
@@ -336,6 +336,9 @@ def make_argparser():
 
     parser_play = subparsers.add_parser('play', help=cmd_play.__doc__)
     parser_play.set_defaults(func=cmd_play)
+    parser_play.add_argument("-w", "--word",
+                             action="store", default=None,
+                             help="specify word to guess")
 
     parser_assist = subparsers.add_parser('assist', help=cmd_assist.__doc__)
     parser_assist.set_defaults(func=cmd_assist)
@@ -353,7 +356,7 @@ def make_argparser():
 
 def cmd_play(w, args):
     """Play wordle"""
-    w.play()
+    w.play(args.word)
     return(0)
 
 
