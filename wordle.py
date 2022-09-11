@@ -102,14 +102,20 @@ class Wordle:
 
     # Words dict/words the NYT doesn't consider to be words
     nyt_non_words = [
+        "arara",
         "bensh",
         "decap",
         "divel"
         "kusam",
+        "nintu",
+        "ninut",
         "nondu",
+        "nunni",
         "rokee",
         "skewl",
         "tungo",
+        "uninn",
+        "unsin",
         "vedro",
         "yabbi"
     ]
