@@ -385,6 +385,7 @@ def cmd_process(w, args):
 def cmd_auto(w, args):
     """Automatically play numerous games and report how we do"""
     results = []
+    failures = []
     for game in range(args.num_games):
         print(f"Game {game}...")
         word = args.word if args.word else random.choice(w.word_list())
@@ -402,6 +403,7 @@ def cmd_auto(w, args):
             print(f"   ...got {word} in {guess_num+1} guesses")
         else:
             print(f"   ...failed to get {word}.")
+            failures.append(word)
     tally = {}
     for result in results:
         tally[result] = tally.get(result, 0) + 1
@@ -410,7 +412,7 @@ def cmd_auto(w, args):
     average = statistics.fmean([result+1 for result in results
                                 if result < w.guess_limit])
     print(f"Average: {average}")
-    print(f"Failures: {tally.get(w.guess_limit,0)}")
+    print(f"Failures: {tally.get(w.guess_limit,0)} : {' '.join(failures)}")
 
 
 def cmd_assist(w, args):
