@@ -3,6 +3,7 @@
 import argparse
 import cmd
 import collections
+import itertools
 import random
 import statistics
 import string
@@ -191,9 +192,8 @@ class Solver:
         # the puzzle
         self.filters = []
         # What we know about the letters
-        self.letter_knowledge = {}
-        for letter in string.ascii_lowercase:
-            self.letter_knowledge[letter] = self.NO_KNOWLEDGE
+        self.letter_knowledge = dict(zip(string.ascii_lowercase,
+                                         itertools.repeat(self.NO_KNOWLEDGE)))
         # Create self.letter_weights and self.word_weights
         self.generate_weights()
 
@@ -257,15 +257,13 @@ class Solver:
         responses = list(response.upper())
         if len(responses) != 5:
             raise RuntimeError(f"Illegal length for response: {response}")
-        response_by_char = {}
+        response_by_char = collections.defaultdict(list)
         # Create dictionary with characters for keys and an array of results
         # as the value
         for c, r in zip(letters, responses):
             if r not in ("G", "O", "W"):
                 raise RuntimeError(f"Illegal response: {response}")
-            v = response_by_char.get(c, [])
-            v.append(r)
-            response_by_char[c] = v
+            response_by_char[c].append(r)
         filters = []
         # Handle Green and Orange results telling us certain places
         # must or must not be certain letters
