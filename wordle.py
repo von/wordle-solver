@@ -49,6 +49,7 @@ class AssistCmd(cmd.Cmd):
         except ValueError:
             # May already have been removed
             pass
+        self.s.word_weights.pop(arg, None)
 
     def default(self, line):
         words = line.split()
