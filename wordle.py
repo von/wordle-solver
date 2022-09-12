@@ -108,8 +108,10 @@ class Wordle:
     nyt_non_words = [
         "arara",
         "bensh",
+        "beode",
         "decap",
-        "divel"
+        "divel",
+        "izote",
         "kusam",
         "nintu",
         "ninut",
