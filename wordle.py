@@ -430,9 +430,13 @@ def cmd_auto(w, args):
         tally[result] = tally.get(result, 0) + 1
     for n in range(w.guess_limit):
         print(f"{n+1} guesses: {tally.get(n, 0)}")
-    average = statistics.fmean([result+1 for result in results
-                                if result < w.guess_limit])
-    print(f"Average: {average}")
+    try:
+        average = statistics.fmean([result+1 for result in results
+                                    if result < w.guess_limit])
+        print(f"Average: {average}")
+    except statistics.StatisticsError:
+        # All failures
+        pass
     print(f"Failures: {tally.get(w.guess_limit,0)} : {' '.join(failures)}")
 
 
