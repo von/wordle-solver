@@ -243,9 +243,13 @@ class Solver:
 
     def generate_weights(self):
         """Update self.letter_weights and self.word_weights"""
-        self.letter_weights = collections.Counter()
-        for word in self.possible:
-            self.letter_weights.update(word)
+        # self.letter_weights = collections.Counter()
+        # for word in self.possible:
+        #     self.letter_weights.update(word)
+        self.letter_weights = {}
+        for letter in string.ascii_lowercase:
+            count = len([w for w in self.possible if letter in w])
+            self.letter_weights[letter] = count / len(self.possible)
         for letter, weight in self.letter_knowledge.items():
             self.letter_weights[letter] *= weight
         self.word_weights = dict(zip(
