@@ -253,9 +253,9 @@ class Solver:
         for letter, weight in self.letter_knowledge.items():
             self.letter_weights[letter] *= weight
         self.word_weights = dict(zip(
-            self.possible,
+            self.words,
             [sum([self.letter_weights[letter] for letter in set(w)])
-             for w in self.possible]))
+             for w in self.words]))
 
     def generate_guess(self, guess_num):
         """Generate a guess given what we know and guess number"""
