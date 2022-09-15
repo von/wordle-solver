@@ -424,6 +424,8 @@ def cmd_auto(w, args):
                 results.append(guess_num)
                 break
             s.process_guess(guess, response)
+            if args.debug:
+                print(f"   ...{len(s.possible)} left.")
         else:
             results.append(w.guess_limit)
         if response == "GGGGG":
