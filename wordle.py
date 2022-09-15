@@ -333,9 +333,13 @@ class Solver:
 
     def dump(self):
         """Return our state as a string"""
-        s = ""
-        for letter, weight in self.letter_knowledge.items():
+        s = "Letter weights:\n"
+        for letter, weight in self.letter_weights.items():
             s += f"{letter}: {weight}\n"
+        max_weight = max(self.word_weights.values())
+        s += f"\nTop guesses (weight = {max_weight}):\n"
+        s += " ".join([w for w in self.word_weights.keys()
+                       if self.word_weights[w] == max_weight])
         return s
 
 
