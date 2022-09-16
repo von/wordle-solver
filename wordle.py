@@ -3,6 +3,7 @@
 import argparse
 import cmd
 import collections
+import functools
 import itertools
 import random
 import statistics
@@ -143,6 +144,7 @@ class Wordle:
     guess_limit = 6
 
     @classmethod
+    @functools.cache
     def word_list(cls):
         """Load and return a list of words"""
         try:
