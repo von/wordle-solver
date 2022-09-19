@@ -4,7 +4,6 @@ import argparse
 import cmd
 import collections
 import functools
-import itertools
 import random
 import statistics
 import string
@@ -50,17 +49,18 @@ class AssistCmd(cmd.Cmd):
         except ValueError:
             # May already have been removed
             pass
-        self.s.word_weights.pop(arg, None)
 
     def default(self, line):
         words = line.split()
         if len(words) != 2:
             return super().default(line)
         try:
-            self.s.process_guess(words[0], words[1])
+            self.s.process_response(words[0], words[1])
         except RuntimeError as e:
             print(f"Error: {e}")
             return
+        self.s.update_possible_words()
+        self.s.update_letter_freq()
         p = len(self.s.possible)
         print(f"{p} possible word{'s' if p > 1 else ''}")
         self.guess_num += 1
@@ -204,17 +204,33 @@ class Solver:
 
     def __init__(self):
         self.words = Wordle.word_list()
+
         # Possible words given any processing
         self.possible = self.words
-        # Filters is a list of functions which must return True
-        # for a given word for it to be a valid possible answer to
-        # the puzzle
-        self.filters = []
+
+        # What letters are known in the solution
+        self.known_letters = [None, None, None, None, None]
+
+        # Letters we know are not to be given positions in the solution
+        self.known_non_letters = [[], [], [], [], []]
+
         # What we know about the letters
-        self.letter_knowledge = dict(zip(string.ascii_lowercase,
-                                         itertools.repeat(self.NO_KNOWLEDGE)))
-        # Create self.letter_weights and self.word_weights
-        self.generate_weights()
+        self.letters = {}
+        for letter in string.ascii_lowercase:
+            self.letters[letter] = {
+                # Where does this letter appear in the word
+                "appears_at": [],
+                # Where this letter does not appear in the word
+                "does_not_appear_at": [],
+                # Is count exact (True) or a minimum (False)
+                "exact_count": False,
+                # Number of times this letter appears
+                "count": 0,
+                # Frequency the letters appears in possible words
+                "freq": 0
+            }
+        # Create self.letters[*]["freq"]
+        self.update_letter_freq()
 
     # Create filters as closures to force early binding
     # See https://docs.python-guide.org/writing/gotchas/#late-binding-closures
@@ -243,20 +259,36 @@ class Solver:
         """Return a filter that requires letter c at least n times"""
         return lambda w: w.count(c) >= n
 
-    def generate_weights(self):
-        """Update self.letter_weights and self.word_weights"""
-        # self.letter_weights = collections.Counter()
-        # for word in self.possible:
-        #     self.letter_weights.update(word)
-        self.letter_weights = {}
-        for letter in string.ascii_lowercase:
+    def update_possible_words(self):
+        """Update self.possible"""
+        # Create a list of filters to run against the complete word
+        # list based on our state.
+        filters = []
+        for c, info in self.letters.items():
+            for i in info["appears_at"]:
+                filters.append(self.filter_index_eq(i, c))
+            for i in info["does_not_appear_at"]:
+                filters.append(self.filter_index_ne(i, c))
+            if info["count"] == 0 and not info["exact_count"]:
+                continue
+            if info["exact_count"]:
+                filters.append(self.filter_count_eq(c, info["count"]))
+            else:
+                filters.append(self.filter_count_ge(c, info["count"]))
+        self.possible = [w for w in self.possible
+                         if all([f(w) for f in filters])]
+
+    def update_letter_freq(self):
+        """Update self.letters[freq] based on self.possible"""
+        for letter, info in self.letters.items():
             count = len([w for w in self.possible if letter in w])
-            self.letter_weights[letter] = count / len(self.possible)
-        for letter, weight in self.letter_knowledge.items():
-            self.letter_weights[letter] *= weight
-        self.word_weights = dict(zip(
+            info["freq"] = count / len(self.possible)
+
+    def update_weights(self):
+        """Update self.possible values based on self.letters"""
+        self.possible = dict(zip(
             self.words,
-            [sum([self.letter_weights[letter] for letter in set(w)])
+            [sum([self.letters[letter]["weight"] for letter in set(w)])
              for w in self.words]))
 
     def generate_guess(self, guess_num):
@@ -264,70 +296,64 @@ class Solver:
         if len(self.possible) == 1:
             return self.possible[0]
         elif guess_num < Wordle.guess_limit:
-            max_weight = max(self.word_weights.values())
-            guess = random.choice([w for w in self.word_weights.keys()
-                                   if self.word_weights[w] == max_weight])
+            weights = dict(zip(
+                self.words,
+                [sum([self.letters[letter]["freq"] for letter in set(w)])
+                 for w in self.words]))
+            max_weight = max(weights.values())
+            guess = random.choice([w for w in weights.keys()
+                                   if weights[w] == max_weight])
             return(guess)
         else:
+            # Last guess, take a stab...
             return random.choice(self.possible)
 
-    def process_guess(self, word, response):  # noqa - too complex
-        """Process a guess (a word and a response)
+    def process_response(self, word, response):
+        """Process a reponse to a word
 
         word is a five-letter word
         response is five characters: G, O, or W"""
+        # Validate work and response and split into letters
         letters = list(word.lower())
         if len(letters) != 5:
             raise RuntimeError(f"Illegal length for word: {word}")
+        if any([c not in string.ascii_lowercase for c in letters]):
+            raise RuntimeError(f"Illegal characters in word: {word}")
         responses = list(response.upper())
         if len(responses) != 5:
             raise RuntimeError(f"Illegal length for response: {response}")
-        response_by_char = collections.defaultdict(list)
-        # Create dictionary with characters for keys and an array of results
-        # as the value
-        for c, r in zip(letters, responses):
-            if r not in ("G", "O", "W"):
-                raise RuntimeError(f"Illegal response: {response}")
-            response_by_char[c].append(r)
-        filters = []
+        if any([r not in "GOW" for r in responses]):
+            raise RuntimeError(f"Illegal character in response: {response}")
+
         # Handle Green and Orange results telling us certain places
         # must or must not be certain letters
         for i, c in enumerate(letters):
             if responses[i] == "G":
-                filters.append(self.filter_index_eq(i, c))
-            elif responses[i] == "O":
-                filters.append(self.filter_index_ne(i, c))
+                self.known_letters[i] = c
+                self.letters[c]["appears_at"].append(i)
+            else:
+                # Both W and O means the letter isn't correct in the
+                # position.
+                self.known_non_letters[i].append(c)
+                self.letters[c]["does_not_appear_at"].append(i)
+        # Create dictionary with characters for keys and an array of results
+        # as the value
+        response_by_char = collections.defaultdict(list)
+        for c, r in zip(letters, responses):
+            response_by_char[c].append(r)
         # Walk each character in the guess and process how many times
         # it appears
         for c, r in response_by_char.items():
             green = r.count("G")
             orange = r.count("O")
             white = r.count("W")
-            if white == len(r):
-                # No hits, if this character appears in a word, it's
-                # not a match.
-                filters.append(self.filter_not(c))
-            elif white > 0:
-                # Hits with one or more miss, we know exactly how many times
-                # this character has to appear in the answer
-                filters.append(
-                        self.filter_count_eq(c, green + orange))
-            else:
-                # All hits, no misses. We only know the minimum
-                # number of times this character appears inthe answer
-                filters.append(
-                    self.filter_count_ge(c, green + orange))
-            # Figure out what we know about this letter
-            # If all greens and at least one white, we know everything
-            # else we just know something.
-            if white > 0 and white + green == len(r):
-                self.letter_knowledge[c] = self.COMPLETE_KNOWLEDGE
-            elif self.letter_knowledge[c] != self.COMPLETE_KNOWLEDGE:
-                self.letter_knowledge[c] = self.SOME_KNOWLEDGE
-        self.possible = [w for w in self.possible
-                         if all([f(w) for f in filters])]
-        self.filters.extend(filters)
-        self.generate_weights()
+            # We know we have at least one of the given letter for
+            # each orange and green response
+            self.letters[c]["count"] = max(self.letters[c]["count"],
+                                           green + orange)
+            # If we have a white response, then we know exactly
+            # how many times it appears (may be zero).
+            self.letters[c]["exact_count"] = white > 0
 
     def assist(self):
         """Assist in playing Wordle"""
@@ -335,13 +361,15 @@ class Solver:
 
     def dump(self):
         """Return our state as a string"""
-        s = "Letter weights:\n"
-        for letter, weight in self.letter_weights.items():
-            s += f"{letter}: {weight}\n"
-        max_weight = max(self.word_weights.values())
-        s += f"\nTop guesses (weight = {max_weight}):\n"
-        s += " ".join([w for w in self.word_weights.keys()
-                       if self.word_weights[w] == max_weight])
+        s = "Known letters: "
+        s += "".join([c if c else "-" for c in self.known_letters]) + "\n"
+        s += "Letter knowledge:\n"
+        for letter, info in self.letters.items():
+            s += f"  {letter}: "
+            s += f"Count: {'==' if info['exact_count'] else '>='}"
+            s += f"{info['count']}"
+            s += f" frequency: {info['freq']}\n"
+        s += f"{len(self.possible)} possible words\n"
         return s
 
 
@@ -404,7 +432,9 @@ def cmd_play(w, args):
 def cmd_process(w, args):
     """Process a guess and response"""
     s = Solver()
-    s.process_guess(args.word[0], args.result[0])
+    s.process_response(args.word[0], args.result[0])
+    s.update_possible_words()
+    s.update_letter_freq()
     print("\n".join(list(s.possible)))
     return(0)
 
@@ -425,7 +455,9 @@ def cmd_auto(w, args):
             if success:
                 results.append(guess_num)
                 break
-            s.process_guess(guess, response)
+            s.process_response(guess, response)
+            s.update_possible_words()
+            s.update_letter_freq()
             if args.debug:
                 print(f"   ...{len(s.possible)} left.")
         else:
