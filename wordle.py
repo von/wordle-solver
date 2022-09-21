@@ -382,7 +382,9 @@ class Solver:
             s += f"  {letter}: "
             s += f"Count: {'==' if info['exact_count'] else '>='}"
             s += f"{info['count']}"
-            s += f" frequency: {info['freq']}\n"
+            if not info["exact_count"]:
+                s += f" frequency: {info['freq']}"
+            s += "\n"
         s += f"{len(self.possible)} possible words\n"
         return s
 
