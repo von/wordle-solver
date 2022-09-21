@@ -291,15 +291,29 @@ class Solver:
             [sum([self.letters[letter]["weight"] for letter in set(w)])
              for w in self.words]))
 
+    def word_weight(self, word):
+        """Given a word, return its weight in terms of being a guess"""
+        weight = 0.0
+        for letter in set(word):
+            info = self.letters[letter]
+            # If we know the exact count, there is nothing to learn
+            # from this word.
+            if not info["exact_count"]:
+                # If the word doesn't have more of the letter than
+                # we already know exists, there is nothing to learn from
+                # this word.
+                if word.count(letter) > info["count"]:
+                    # We can learn something about this letter from
+                    # this word, so add to word's weight.
+                    weight += info["freq"]
+        return weight
+
     def generate_guess(self, guess_num):
         """Generate a guess given what we know and guess number"""
         if len(self.possible) == 1:
             return self.possible[0]
         elif guess_num < Wordle.guess_limit:
-            weights = dict(zip(
-                self.words,
-                [sum([self.letters[letter]["freq"] for letter in set(w)])
-                 for w in self.words]))
+            weights = {w: self.word_weight(w) for w in self.words}
             max_weight = max(weights.values())
             guess = random.choice([w for w in weights.keys()
                                    if weights[w] == max_weight])
