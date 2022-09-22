@@ -4,6 +4,7 @@ import argparse
 import cmd
 import collections
 import functools
+import itertools
 import random
 import statistics
 import string
@@ -412,6 +413,9 @@ def make_argparser():
 
     parser_auto = subparsers.add_parser('auto', help=cmd_auto.__doc__)
     parser_auto.set_defaults(func=cmd_auto)
+    parser_auto.add_argument("-a", "--all",
+                             action="store_true", default=False,
+                             help="Try each word in dictionary")
     parser_auto.add_argument("-w", "--word",
                              action="store", default=None,
                              help="specify word to guess")
@@ -455,39 +459,50 @@ def cmd_process(w, args):
     return(0)
 
 
+def play_game(w, word, debug=False):
+    """Try to solve word.
+
+    Return True, number of guesses if succesful. False otherwise.
+    """
+    s = Solver()
+    for guess_num in range(w.guess_limit):
+        guess = s.generate_guess(guess_num + 1)
+        if debug:
+            print(f"Guessing {guess}")
+        success, response = w.generate_response(word, guess)
+        if success:
+            return True, guess_num+1
+        s.process_response(guess, response)
+        s.update_possible_words()
+        s.update_letter_freq()
+        if debug:
+            print(f"   ...{len(s.possible)} left.")
+    return False, 0
+
+
 def cmd_auto(w, args):
     """Automatically play numerous games and report how we do"""
     results = []
     failures = []
-    for game in range(args.num_games):
-        print(f"Game {game}...")
-        word = args.word if args.word else random.choice(w.word_list())
-        s = Solver()
-        for guess_num in range(w.guess_limit):
-            guess = s.generate_guess(guess_num + 1)
-            if args.debug:
-                print(f"Guessing {guess}")
-            success, response = w.generate_response(word, guess)
-            if success:
-                results.append(guess_num)
-                break
-            s.process_response(guess, response)
-            s.update_possible_words()
-            s.update_letter_freq()
-            if args.debug:
-                print(f"   ...{len(s.possible)} left.")
+    if args.all:
+        words = w.word_list()
+    else:
+        if args.word:
+            words = itertools.repeat(args.word, args.num_games)
         else:
-            results.append(w.guess_limit)
-        if response == "GGGGG":
-            print(f"   ...got {word} in {guess_num+1} guesses")
+            words = random.choices(w.word_list(), k=args.num_games)
+    for game, word in enumerate(words):
+        print(f"Game {game}:{word}")
+        result, guess_num = play_game(w, word, args.debug)
+        if result:
+            print(f"   ...got {word} in {guess_num} guesses")
+            results.append(guess_num)
         else:
             print(f"   ...failed to get {word}.")
             failures.append(word)
-    tally = {}
-    for result in results:
-        tally[result] = tally.get(result, 0) + 1
+    tally = collections.Counter(results)
     for n in range(w.guess_limit):
-        print(f"{n+1} guesses: {tally.get(n, 0)}")
+        print(f"{n+1} guesses: {tally.get(n+1, 0)}")
     try:
         average = statistics.fmean([result+1 for result in results
                                     if result < w.guess_limit])
@@ -495,7 +510,7 @@ def cmd_auto(w, args):
     except statistics.StatisticsError:
         # All failures
         pass
-    print(f"Failures: {tally.get(w.guess_limit,0)} : {' '.join(failures)}")
+    print(f"Failures: {len(failures)} : {' '.join(failures)}")
 
 
 def cmd_assist(w, args):
