@@ -282,7 +282,8 @@ class Solver:
     def update_letter_freq(self):
         """Update self.letters[freq] based on self.possible"""
         for letter, info in self.letters.items():
-            count = len([w for w in self.possible if letter in w])
+            count = len([w for w in self.possible
+                         if w.count(letter) > info["count"]])
             info["freq"] = count / len(self.possible)
 
     def update_weights(self):
