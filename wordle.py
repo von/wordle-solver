@@ -106,42 +106,6 @@ class PlayCmd(cmd.Cmd):
 
 class Wordle:
 
-    # Words dict/words the NYT doesn't consider to be words
-    nyt_non_words = [
-        "adlet",
-        "alani",
-        "altin",
-        "ampyx",
-        "arara",
-        "artar",
-        "bensh",
-        "beode",
-        "chold",
-        "decap",
-        "divel",
-        "izote",
-        "glaky",
-        "glink",
-        "guaka",
-        "kusam",
-        "nintu",
-        "ninut",
-        "nondu",
-        "nunni",
-        "rokee",
-        "skeeg",
-        "skewl",
-        "taled",
-        "tungo",
-        "uninn",
-        "unlie",
-        "ungka",
-        "unsin",
-        "upbid",
-        "vedro",
-        "yabbi"
-    ]
-
     guess_limit = 6
 
     @classmethod
@@ -153,13 +117,19 @@ class Wordle:
                 words = [s.strip() for s in f.readlines()]
         except FileNotFoundError:
             raise RuntimeError("Dictionary not found")
+        try:
+            # Words that NYT Wordle doesn't accept
+            with open("non-words.txt") as f:
+                non_words = [s.strip() for s in f.readlines()]
+        except FileNotFoundError:
+            non_words = []
 
         def filt(w):
             return (len(w) == 5 and
                     # Remove proper nouns
                     w[0] in string.ascii_lowercase and
                     # Remove words NYT doesn't consider words
-                    w not in cls.nyt_non_words)
+                    w not in non_words)
         words = filter(filt, words)
         return list(words)
 
