@@ -12,6 +12,7 @@ divel
 izote
 glaky
 glink
+grimp
 guaka
 kusam
 lithy
@@ -20,6 +21,7 @@ ninut
 nondu
 nunni
 rokee
+punct
 skeeg
 skewl
 taled
@@ -29,5 +31,6 @@ unlie
 ungka
 unsin
 upbid
+upmix
 vedro
 yabbi
