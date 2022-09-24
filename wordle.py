@@ -287,6 +287,10 @@ class Solver:
         elif guess_num < Wordle.guess_limit:
             weights = {w: self.word_weight(w) for w in self.words}
             max_weight = max(weights.values())
+            # If max_weight is zero for some reason, then we're to
+            # the point of guessing possible words.
+            if max_weight == 0:
+                return random.choice(self.possible)
             guess = random.choice([w for w in weights.keys()
                                    if weights[w] == max_weight])
             return(guess)
