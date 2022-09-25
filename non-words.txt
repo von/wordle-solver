@@ -8,6 +8,7 @@ bensh
 beode
 chold
 decap
+dimit
 divel
 izote
 glaky
