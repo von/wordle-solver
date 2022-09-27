@@ -6,6 +6,8 @@ arara
 artar
 bensh
 beode
+bichy
+bucky
 chold
 decap
 dimit
@@ -22,6 +24,8 @@ ninut
 nondu
 nunni
 rokee
+padge
+phoby
 punct
 skeeg
 skewl
