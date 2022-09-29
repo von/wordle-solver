@@ -1,2 +1,6 @@
 * Rewrite to use more common color names (White->Grey, Orange->Yellow)
   Note: can't use 'G' for Grey since it clashes with 'G' for Green
+
+* Handle case where all/most letters are known, just not their location.
+  E.g. word is 'spool' Guesses: arose, potch, noily, torsk, shoor, sloop
+  Last several guesses seem very inefficient.
