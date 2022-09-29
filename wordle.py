@@ -475,7 +475,10 @@ def play_game(w, word, debug=False):
         s.update_possible_words()
         s.update_letter_freq()
         if debug:
-            print(f"   ...{len(s.possible)} left.")
+            if len(s.possible) < 10:
+                print(f"   ...{len(s.possible)} left: {' '.join(s.possible)}")
+            else:
+                print(f"   ...{len(s.possible)} left.")
     return False, 0
 
 
