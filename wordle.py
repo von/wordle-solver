@@ -11,6 +11,18 @@ import string
 import sys
 
 
+class Colors:
+    black = "\033[30m"
+    red = "\033[31m"
+    green = "\033[32m"
+    yellow = "\033[33m"
+    blue = "\033[34m"
+    magenta = "\033[35m"
+    cyan = "\033[36m"
+    white = "\033[37m"
+    reset = "\033[0m"
+
+
 class AssistCmd(cmd.Cmd):
     """Command loop for 'assist'"""
 
@@ -492,10 +504,11 @@ def cmd_auto(w, args):
         print(f"Game {game}:{word}")
         result, guess_num = play_game(w, word, args.debug)
         if result:
-            print(f"   ...got {word} in {guess_num} guesses")
+            print(f"{Colors.green}   ...got {word} in {guess_num} guesses"
+                  f"{Colors.reset}")
             results.append(guess_num)
         else:
-            print(f"   ...failed to get {word}.")
+            print(f"{Colors.red}   ...failed to get {word}.{Colors.reset}")
             failures.append(word)
     tally = collections.Counter(results)
     for n in range(w.guess_limit):
