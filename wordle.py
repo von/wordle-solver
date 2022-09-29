@@ -17,9 +17,9 @@ class AssistCmd(cmd.Cmd):
     intro = "Welcome to Wordle assist. Enter 'help' for help."
     prompt = "> "
 
-    def __init__(self, wordle):
+    def __init__(self, solver):
         super().__init__()
-        self.s = Solver()
+        self.s = solver
         self.guess_num = 1
 
     def do_list(self, arg):
