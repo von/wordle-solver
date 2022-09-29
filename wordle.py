@@ -266,6 +266,11 @@ class Solver:
             count = len([w for w in self.possible
                          if w.count(letter) > info["count"]])
             info["freq"] = count / len(self.possible)
+        if self.debug:
+            max_letters = sorted(self.letters.keys(),
+                                 key=lambda l: self.letters[l]["freq"],
+                                 reverse=True)[:5]
+            print(f"Top letters: {' '.join(max_letters)}")
 
     def update_weights(self):
         """Update self.possible values based on self.letters"""
@@ -294,6 +299,8 @@ class Solver:
     def generate_guess(self, guess_num):
         """Generate a guess given what we know and guess number"""
         if len(self.possible) == 1:
+            if self.debug:
+                print("Down to only one possible solution.")
             return self.possible[0]
         elif guess_num < Wordle.guess_limit:
             weights = {w: self.word_weight(w) for w in self.words}
@@ -301,12 +308,18 @@ class Solver:
             # If max_weight is zero for some reason, then we're to
             # the point of guessing possible words.
             if max_weight == 0:
+                if self.debug:
+                    print("No word weighted. Guessing.")
                 return random.choice(self.possible)
-            guess = random.choice([w for w in weights.keys()
-                                   if weights[w] == max_weight])
+            max_words = [w for w in weights.keys()
+                         if weights[w] == max_weight]
+            if self.debug:
+                print(f"Choosing from: {' '.join(max_words)}")
+            guess = random.choice(max_words)
             return(guess)
         else:
-            # Last guess, take a stab...
+            if self.debug:
+                print("Last guess, taking a stab...")
             return random.choice(self.possible)
 
     def process_response(self, word, response):
