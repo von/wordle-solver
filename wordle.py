@@ -152,7 +152,7 @@ class Wordle:
     def generate_response(word, guess):
         """Given a word and a guess, generate a response string"""
         letters = list(word)
-        response = ["W", "W", "W", "W", "W"]
+        response = ["-", "-", "-", "-", "-"]
         # First determine all the correct letters
         # Remove them from letters to avoid them being double counted.
         for i, l in enumerate(list(guess)):
@@ -166,7 +166,7 @@ class Wordle:
             if response[i] == "G":
                 continue
             if l in letters:
-                response[i] = "O"
+                response[i] = "Y"
                 letters[letters.index(l)] = None
         success = response.count("G") == 5
         return (success, "".join(response))
@@ -333,7 +333,7 @@ class Solver:
         """Process a reponse to a word
 
         word is a five-letter word
-        response is five characters: G, O, or W"""
+        response is five characters: G, Y, or -"""
         # Validate work and response and split into letters
         letters = list(word.lower())
         if len(letters) != 5:
@@ -343,10 +343,10 @@ class Solver:
         responses = list(response.upper())
         if len(responses) != 5:
             raise RuntimeError(f"Illegal length for response: {response}")
-        if any([r not in "GOW" for r in responses]):
+        if any([r not in "GY-" for r in responses]):
             raise RuntimeError(f"Illegal character in response: {response}")
 
-        # Handle Green and Orange results telling us certain places
+        # Handle Green and Yellow results telling us certain places
         # must or must not be certain letters
         for i, c in enumerate(letters):
             if responses[i] == "G":
@@ -366,15 +366,15 @@ class Solver:
         # it appears
         for c, r in response_by_char.items():
             green = r.count("G")
-            orange = r.count("O")
-            white = r.count("W")
+            yellow = r.count("Y")
+            grey = r.count("-")
             # We know we have at least one of the given letter for
-            # each orange and green response
+            # each yellow and green response
             self.letters[c]["count"] = max(self.letters[c]["count"],
-                                           green + orange)
-            # If we have a white response, then we know exactly
+                                           green + yellow)
+            # If we have a grey response, then we know exactly
             # how many times it appears (may be zero).
-            self.letters[c]["exact_count"] = white > 0
+            self.letters[c]["exact_count"] = grey > 0
 
     def assist(self):
         """Assist in playing Wordle"""
