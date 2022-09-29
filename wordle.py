@@ -108,6 +108,9 @@ class Wordle:
 
     guess_limit = 6
 
+    def __init__(self, debug=False):
+        self.debug = debug
+
     @classmethod
     @functools.cache
     def word_list(cls):
@@ -160,6 +163,10 @@ class Wordle:
         """Play a game"""
         PlayCmd(self, word=word).cmdloop()
 
+    def solver(self):
+        """Return a Solver instance"""
+        return Solver(debug=self.debug)
+
 
 class Solver:
 
@@ -173,7 +180,9 @@ class Solver:
     # We know everywhere the letter appears
     COMPLETE_KNOWLEDGE = 0
 
-    def __init__(self):
+    def __init__(self, debug=False):
+        self.debug = debug
+
         self.words = Wordle.word_list()
 
         # Possible words given any processing
@@ -426,7 +435,7 @@ def cmd_play(w, args):
 
 def cmd_process(w, args):
     """Process a guess and response"""
-    s = Solver()
+    s = w.solver()
     s.process_response(args.word[0], args.result[0])
     s.update_possible_words()
     s.update_letter_freq()
@@ -439,7 +448,7 @@ def play_game(w, word, debug=False):
 
     Return True, number of guesses if succesful. False otherwise.
     """
-    s = Solver()
+    s = w.solver()
     for guess_num in range(w.guess_limit):
         guess = s.generate_guess(guess_num + 1)
         if debug:
@@ -490,7 +499,7 @@ def cmd_auto(w, args):
 
 def cmd_assist(w, args):
     """Assst with playing Wordle"""
-    s = Solver()
+    s = w.solver()
     s.assist()
     return(0)
 
@@ -498,7 +507,7 @@ def cmd_assist(w, args):
 def main(argv=None):
     parser = make_argparser()
     args = parser.parse_args(argv if argv else sys.argv[1:])
-    w = Wordle()
+    w = Wordle(debug=args.debug)
     return args.func(w, args)
 
 
