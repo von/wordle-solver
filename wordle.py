@@ -272,13 +272,6 @@ class Solver:
                                  reverse=True)[:5]
             print(f"Top letters: {' '.join(max_letters)}")
 
-    def update_weights(self):
-        """Update self.possible values based on self.letters"""
-        self.possible = dict(zip(
-            self.words,
-            [sum([self.letters[letter]["weight"] for letter in set(w)])
-             for w in self.words]))
-
     def word_weight(self, word):
         """Given a word, return its weight in terms of being a guess"""
         weight = 0.0
