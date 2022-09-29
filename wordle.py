@@ -257,6 +257,8 @@ class Solver:
                 filters.append(self.filter_count_ge(c, info["count"]))
         self.possible = [w for w in self.possible
                          if all([f(w) for f in filters])]
+        if len(self.possible) == 0:
+            raise RuntimeError("No possible words.")
 
     def update_letter_freq(self):
         """Update self.letters[freq] based on self.possible"""
