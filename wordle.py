@@ -284,16 +284,22 @@ class Solver:
         weight = 0.0
         for letter in set(word):
             info = self.letters[letter]
-            # If we know the exact count, there is nothing to learn
-            # from this word.
-            if not info["exact_count"]:
-                # If the word doesn't have more of the letter than
-                # we already know exists, there is nothing to learn from
-                # this word.
-                if word.count(letter) > info["count"]:
-                    # We can learn something about this letter from
-                    # this word, so add to word's weight.
-                    weight += info["freq"]
+
+            # Determine if word can help determine count of letters
+            if (not info["exact_count"] and
+                    word.count(letter) >= info["count"]):
+                weight += info["freq"]
+
+            # Determine if word can help determine location of letters
+            # XXX This could be more precise by comparing where
+            #     the letters appear in the word and where we
+            #     know the letter appears.
+            elif (info["count"] > len(info["appears_at"]) and
+                    word.count(letter) >= info["count"]):
+                # We don't weight this as highly since it's not as important
+                # as determining count.
+                # .1 multiplier is arbitrary
+                weight += info["freq"] * .1
         return weight
 
     def generate_guess(self, guess_num):
