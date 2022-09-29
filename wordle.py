@@ -108,7 +108,7 @@ class PlayCmd(cmd.Cmd):
         if success:
             print("Success!")
             return True
-        print(response)
+        print(self.w.colorize_reponse(response))
         if self.guess_num > self.w.guess_limit:
             print("Sorry, you have run out of guesses."
                   f" The word was {self.word}")
@@ -170,6 +170,13 @@ class Wordle:
                 letters[letters.index(l)] = None
         success = response.count("G") == 5
         return (success, "".join(response))
+
+    @staticmethod
+    def colorize_reponse(response):
+        """Given a five-character response, colorize it"""
+        s = response.replace("G", f"{Colors.green}G{Colors.reset}")
+        s = s.replace("Y", f"{Colors.yellow}Y{Colors.reset}")
+        return s
 
     def play(self, word=None):
         """Play a game"""
