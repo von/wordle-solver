@@ -485,6 +485,8 @@ def play_game(w, word, debug=False):
         success, response = w.generate_response(word, guess)
         if success:
             return True, guess_num+1
+        if debug:
+            print(f"   ...response: {w.colorize_reponse(response)}")
         s.process_response(guess, response)
         s.update_possible_words()
         s.update_letter_freq()
