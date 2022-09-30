@@ -508,7 +508,7 @@ def cmd_auto(w, args):
         else:
             words = random.choices(w.word_list(), k=args.num_games)
     for game, word in enumerate(words):
-        print(f"Game {game}:{word}")
+        print(f"Game {game+1}:{word}")
         result, guess_num = play_game(w, word, args.debug)
         if result:
             print(f"{Colors.green}   ...got {word} in {guess_num} guesses"
