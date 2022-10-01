@@ -299,7 +299,7 @@ class Solver:
         for letter in set(word):
             info = self.letters[letter]
             if (not info["exact_count"] and
-                    word.count(letter) >= info["count"]):
+                    word.count(letter) > info["count"]):
                 weight += info["freq"]
         # Determine if word can help figure out location of letters
         for i, letter in enumerate(word):
