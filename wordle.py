@@ -403,8 +403,16 @@ class Solver:
         """Return our state as a string"""
         s = "Known letters: "
         s += "".join([c if c else "-" for c in self.known_letters]) + "\n"
+        s += "Eliminated letters: "
+        s += " ".join([c for c in self.letters.keys()
+                       if (self.letters[c]["count"] == 0 and
+                           self.letters[c]["exact_count"])]) + "\n"
         s += "Letter knowledge:\n"
         for letter, info in self.letters.items():
+            if info["count"] == 0 and info["exact_count"]:
+                continue
+            if info["freq"] == 0:
+                continue
             s += f"  {letter}: "
             s += f"Count: {'==' if info['exact_count'] else '>='}"
             s += f"{info['count']}"
