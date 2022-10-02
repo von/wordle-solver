@@ -278,6 +278,18 @@ class Solver:
                          if all([f(w) for f in filters])]
         if len(self.possible) == 0:
             raise RuntimeError("No possible words.")
+        if len(self.possible) > 1:
+            # Check for any letters we can infer from the fact they
+            # appear at a given index in all possible words.
+            for i in range(5):
+                if self.known_letters[i]:
+                    continue
+                c = self.possible[0][i]
+                if all([w[i] == c for w in self.possible]):
+                    if self.debug:
+                        print(f"Only possible letter at index {i} is {c}")
+                    self.letters[c]["appears_at"].append(i)
+                    self.known_letters[i] = c
 
     def update_letter_freq(self):
         """Update self.letters[freq] based on self.possible"""
