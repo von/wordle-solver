@@ -189,16 +189,6 @@ class Wordle:
 
 class Solver:
 
-    # Values for letter_knowledge. Also weights for word selection.
-    #
-    # We know nothing about if/where the letter appears
-    NO_KNOWLEDGE = 1
-    # We know something about if/where the letter appears
-    # but we don't know we have complete knowledge.
-    SOME_KNOWLEDGE = .1
-    # We know everywhere the letter appears
-    COMPLETE_KNOWLEDGE = 0
-
     def __init__(self, debug=False):
         self.debug = debug
 
