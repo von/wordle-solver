@@ -332,7 +332,8 @@ class Solver:
             max_words = [w for w in weights.keys()
                          if weights[w] == max_weight]
             if self.debug:
-                print(f"Choosing from: {' '.join(max_words)}")
+                print(f"Choosing from: {' '.join(max_words)}"
+                      f" with weight {max_weight}")
             guess = random.choice(max_words)
             return(guess)
         else:
