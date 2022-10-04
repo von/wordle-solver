@@ -288,7 +288,9 @@ class Solver:
                 if all([w[i] == c for w in self.possible]):
                     if self.debug:
                         print(f"Only possible letter at index {i} is {c}")
-                    self.letters[c]["appears_at"].append(i)
+                    info = self.letters[c]
+                    info["appears_at"].append(i)
+                    info["count"] = max(info["count"], len(info["appears_at"]))
                     self.known_letters[i] = c
 
     def update_letter_freq(self):
