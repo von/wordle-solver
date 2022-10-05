@@ -4,6 +4,7 @@ altin
 ampyx
 arara
 artar
+bahay
 bensh
 beode
 bichy
@@ -17,11 +18,13 @@ glaky
 glink
 grimp
 guaka
+katha
 kusam
 lithy
 nintu
 ninut
 nondu
+nunch
 nunni
 owght
 rokee
