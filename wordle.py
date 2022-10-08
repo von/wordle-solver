@@ -33,6 +33,7 @@ class AssistCmd(cmd.Cmd):
         super().__init__()
         self.s = solver
         self.guess_num = 1
+        self.last_guess = None
 
     def do_list(self, arg):
         """List all possible words"""
@@ -40,7 +41,8 @@ class AssistCmd(cmd.Cmd):
 
     def do_guess(self, arg):
         """Print a guess"""
-        print(self.s.generate_guess(self.guess_num))
+        self.last_guess = self.s.generate_guess(self.guess_num)
+        print(self.last_guess)
 
     def do_quit(self, arg):
         """Quit"""
@@ -65,13 +67,20 @@ class AssistCmd(cmd.Cmd):
 
     def default(self, line):
         words = line.split()
-        if len(words) != 2:
+        if len(words) == 1 and self.last_guess:
+            try:
+                self.s.process_response(self.last_guess, words[0])
+            except RuntimeError as e:
+                print(f"Error: {e}")
+                return
+        elif len(words) == 2:
+            try:
+                self.s.process_response(words[0], words[1])
+            except RuntimeError as e:
+                print(f"Error: {e}")
+                return
+        else:
             return super().default(line)
-        try:
-            self.s.process_response(words[0], words[1])
-        except RuntimeError as e:
-            print(f"Error: {e}")
-            return
         self.s.update_possible_words()
         self.s.update_letter_freq()
         p = len(self.s.possible)
