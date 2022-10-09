@@ -312,7 +312,8 @@ class Solver:
             max_letters = sorted(self.letters.keys(),
                                  key=lambda l: self.letters[l]["freq"],
                                  reverse=True)[:5]
-            print(f"Top letters: {' '.join(max_letters)}")
+            s = [f"{c} ({self.letters[c]['freq']:.2f})" for c in max_letters]
+            print(f"Top letters: {' '.join(s)}")
 
     def word_weight(self, word):
         """Given a word, return its weight in terms of being a guess"""
