@@ -382,6 +382,13 @@ class Solver:
         # must or must not be certain letters
         for i, c in enumerate(letters):
             if responses[i] == "G":
+                if self.known_letters[i]:
+                    if self.known_letters[i] != c:
+                        raise RuntimeError("Conflicting response: "
+                                           f" characyer at {i} already =="
+                                           f" {self.known_letters[i]}")
+                    # Letter already known
+                    continue
                 self.known_letters[i] = c
                 self.letters[c]["appears_at"].append(i)
             else:
