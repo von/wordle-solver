@@ -149,6 +149,10 @@ class Wordle:
         except FileNotFoundError:
             non_words = []
 
+        # Remove comments from non-words.txt
+        reg = re.compile(r"^#")
+        non_words = itertools.filterfalse(reg.search, non_words)
+
         def filt(w):
             return (len(w) == 5 and
                     # Remove proper nouns
