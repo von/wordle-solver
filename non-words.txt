@@ -51,3 +51,4 @@ vedro
 whalp
 yabbi
 zimmi
+# vim:set nospell:
