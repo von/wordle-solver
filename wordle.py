@@ -6,6 +6,7 @@ import collections
 import functools
 import itertools
 import random
+import re
 import statistics
 import string
 import sys
