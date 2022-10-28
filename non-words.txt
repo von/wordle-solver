@@ -30,6 +30,8 @@ grimp
 guaka
 hoggy
 katha
+kafiz
+kumbi
 kusam
 lithy
 macco
@@ -58,6 +60,7 @@ utchy
 upbid
 upmix
 vedro
+wakif
 whalp
 yabbi
 zimmi
