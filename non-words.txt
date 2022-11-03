@@ -29,6 +29,7 @@ glink
 grimp
 guaka
 hoggy
+indyl
 katha
 kafiz
 kumbi
