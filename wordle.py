@@ -152,7 +152,7 @@ class Wordle:
 
         # Remove comments from non-words.txt
         reg = re.compile(r"^#")
-        non_words = itertools.filterfalse(reg.search, non_words)
+        non_words = list(itertools.filterfalse(reg.search, non_words))
 
         def filt(w):
             return (len(w) == 5 and
