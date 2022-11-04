@@ -134,15 +134,17 @@ class Wordle:
     def __init__(self, debug=False):
         self.debug = debug
 
-    @classmethod
     @functools.cache
-    def word_list(cls):
+    def word_list(self):
         """Load and return a list of words"""
         try:
             with open("/usr/share/dict/words") as f:
                 words = [s.strip() for s in f.readlines()]
         except FileNotFoundError:
             raise RuntimeError("Dictionary not found")
+        if self.debug:
+            print(f"Read {len(words)} words")
+
         try:
             # Words that NYT Wordle doesn't accept
             with open("non-words.txt") as f:
@@ -153,6 +155,8 @@ class Wordle:
         # Remove comments from non-words.txt
         reg = re.compile(r"^#")
         non_words = list(itertools.filterfalse(reg.search, non_words))
+        if self.debug:
+            print(f"Read {len(non_words)} non-words")
 
         def filt(w):
             return (len(w) == 5 and
@@ -160,8 +164,10 @@ class Wordle:
                     w[0] in string.ascii_lowercase and
                     # Remove words NYT doesn't consider words
                     w not in non_words)
-        words = filter(filt, words)
-        return list(words)
+        words = list(filter(filt, words))
+        if self.debug:
+            print(f"Returning {len(words)} words")
+        return words
 
     @staticmethod
     def generate_response(word, guess):
@@ -208,15 +214,16 @@ class Wordle:
 
     def solver(self):
         """Return a Solver instance"""
-        return Solver(debug=self.debug)
+        return Solver(self, debug=self.debug)
 
 
 class Solver:
 
-    def __init__(self, debug=False):
+    def __init__(self, wordle, debug=False):
         self.debug = debug
+        self.wordle = wordle
 
-        self.words = Wordle.word_list()
+        self.words = wordle.word_list()
 
         # Possible words given any processing
         self.possible = self.words
@@ -331,6 +338,7 @@ class Solver:
                     word.count(letter) > info["count"]):
                 weight += info["freq"]
         # Determine if word can help figure out location of letters
+        # TODO: Avoid words with more than count+1 letters?
         for i, letter in enumerate(word):
             info = self.letters[letter]
             if (i not in info["appears_at"] and
