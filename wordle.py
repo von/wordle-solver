@@ -49,6 +49,10 @@ class AssistCmd(cmd.Cmd):
         """Quit"""
         return True
 
+    def do_EOF(self, arg):
+        """Handle end of file by quitting"""
+        return True
+
     def do_dump(self, arg):
         """Dump wordle state"""
         print(self.s.dump())
@@ -103,6 +107,10 @@ class PlayCmd(cmd.Cmd):
 
     def do_quit(self, arg):
         """Quit"""
+        return True
+
+    def do_EOF(self, arg):
+        """Handle end of file by quitting"""
         return True
 
     def default(self, line):
