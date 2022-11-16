@@ -52,17 +52,20 @@ skeeg
 skewl
 taled
 tungo
+unbow
 uninn
 unlie
 ungka
 unsin
 untop
+unweb
 upbid
 upmix
 utchy
 vedro
 wakif
 whalp
+whank
 yabbi
 zimmi
 # vim:set nospell:
