@@ -102,6 +102,8 @@ class PlayCmd(cmd.Cmd):
         super().__init__()
         self.w = wordle
         self.guess_num = 1
+        if word and len(word) != 5:
+            raise RuntimeError(f"Length of {word} != 5")
         self.word = word if word else random.choice(self.w.word_list())
         self.prompt = f"Your guess ({self.guess_num}/{self.w.guess_limit})? "
 
