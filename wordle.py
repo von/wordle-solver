@@ -89,7 +89,11 @@ class AssistCmd(cmd.Cmd):
         self.s.update_possible_words()
         self.s.update_letter_freq()
         p = len(self.s.possible)
-        print(f"{p} possible word{'s' if p > 1 else ''}")
+        if p < 10:
+            print(f"{p} possible word{'s' if p > 1 else ''} : " +
+                  " ".join(self.s.possible))
+        else:
+            print(f"{p} possible words")
         self.guess_num += 1
 
 
