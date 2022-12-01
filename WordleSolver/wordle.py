@@ -5,6 +5,7 @@ import cmd
 import collections
 import functools
 import itertools
+import os
 import random
 import re
 import statistics
@@ -38,7 +39,8 @@ class AssistCmd(cmd.Cmd):
 
     def do_list(self, arg):
         """List all possible words"""
-        print("\n".join(list(self.s.possible)))
+        print("\n".join(
+            [f"{s} {zipf_frequency(s, 'en')}" for s in self.s.possible]))
 
     def do_guess(self, arg):
         """Print a guess"""
@@ -161,10 +163,12 @@ class Wordle:
 
         try:
             # Words that NYT Wordle doesn't accept
-            with open("non-words.txt") as f:
+            non_words_path = os.path.join(os.path.dirname(__file__),
+                                          'non-words.txt')
+            with open(non_words_path) as f:
                 non_words = [s.strip() for s in f.readlines()]
         except FileNotFoundError:
-            non_words = []
+            raise RuntimeError("non-words.txt not found")
 
         # Remove comments from non-words.txt
         reg = re.compile(r"^#")
