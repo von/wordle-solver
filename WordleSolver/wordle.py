@@ -12,6 +12,8 @@ import statistics
 import string
 import sys
 
+from wordfreq import zipf_frequency
+
 
 class Colors:
     black = "\033[30m"
@@ -154,12 +156,13 @@ class Wordle:
     def word_list(self):
         """Load and return a list of words"""
         try:
-            with open("/usr/share/dict/words") as f:
+            dict = "/usr/share/dict/words"
+            with open(dict) as f:
                 words = [s.strip() for s in f.readlines()]
         except FileNotFoundError:
-            raise RuntimeError("Dictionary not found")
+            raise RuntimeError(f"Dictionary {dict} not found")
         if self.debug:
-            print(f"Read {len(words)} words")
+            print(f"Read {len(words)} words from {dict}")
 
         try:
             # Words that NYT Wordle doesn't accept
@@ -174,7 +177,7 @@ class Wordle:
         reg = re.compile(r"^#")
         non_words = list(itertools.filterfalse(reg.search, non_words))
         if self.debug:
-            print(f"Read {len(non_words)} non-words")
+            print(f"Read {len(non_words)} non-words from {non_words_path}")
 
         def filt(w):
             return (len(w) == 5 and
@@ -371,6 +374,13 @@ class Solver:
             if self.debug:
                 print("Down to only one possible solution.")
             return self.possible[0]
+        elif Wordle.guess_limit - guess_num >= len(self.possible):
+            # We have at least as many guesses as possible words, so we know
+            # we will solve so guess based on word frequency.
+            guess = max(self.possible, key=lambda w: zipf_frequency(w, 'en'))
+            if self.debug:
+                print(f"Guessing {guess} based on frequency.")
+            return guess
         elif guess_num < Wordle.guess_limit:
             weights = {w: self.word_weight(w) for w in self.words}
             max_weight = max(weights.values())
@@ -388,9 +398,10 @@ class Solver:
             guess = random.choice(max_words)
             return(guess)
         else:
+            guess = max(self.possible, key=lambda w: zipf_frequency(w, 'en'))
             if self.debug:
-                print("Last guess, taking a stab...")
-            return random.choice(self.possible)
+                print(f"Last guess, {guess} is most common.")
+            return guess
 
     def process_response(self, word, response):
         """Process a reponse to a word

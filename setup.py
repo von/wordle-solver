@@ -16,7 +16,7 @@ setup(name='wordle-solver',
           'console_scripts': [
               'wordle = WordleSolver.wordle:main'
           ]
-      }
       },
-      package_data={"mypkg": ["non_wordstxt"]}
+      install_requires=['wordfreq'],
+      package_data={"WordleSolver": ["non_words.txt"]}
       )
