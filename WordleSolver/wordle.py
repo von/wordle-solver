@@ -110,9 +110,12 @@ class PlayCmd(cmd.Cmd):
         super().__init__()
         self.w = wordle
         self.guess_num = 1
-        if word and len(word) != 5:
-            raise RuntimeError(f"Length of {word} != 5")
-        self.word = word if word else random.choice(self.w.word_list())
+        if word:
+            if len(word) != 5:
+                raise RuntimeError(f"Length of {word} != 5")
+            self.word = word
+        else:
+            self.word = random.choice(self.w.word_list())
         self.prompt = f"Your guess ({self.guess_num}/{self.w.guess_limit})? "
 
     def do_quit(self, arg):
@@ -236,6 +239,12 @@ class Wordle:
     def solver(self):
         """Return a Solver instance"""
         return Solver(self, debug=self.debug)
+
+    def word_freq(self, word):
+        """Return word frequency as logrythmic value
+
+        Currently a wrapper around wordfreq.zipf_frequency()"""
+        return zipf_frequency(word, "en")
 
 
 class Solver:
@@ -377,7 +386,7 @@ class Solver:
         elif Wordle.guess_limit - guess_num >= len(self.possible):
             # We have at least as many guesses as possible words, so we know
             # we will solve so guess based on word frequency.
-            guess = max(self.possible, key=lambda w: zipf_frequency(w, 'en'))
+            guess = max(self.possible, key=lambda w: self.wordle.word_freq(w))
             if self.debug:
                 print(f"Guessing {guess} based on frequency.")
             return guess
@@ -398,7 +407,7 @@ class Solver:
             guess = random.choice(max_words)
             return(guess)
         else:
-            guess = max(self.possible, key=lambda w: zipf_frequency(w, 'en'))
+            guess = max(self.possible, key=lambda w: self.wordle.word_freq(w))
             if self.debug:
                 print(f"Last guess, {guess} is most common.")
             return guess
@@ -586,11 +595,10 @@ def cmd_auto(w, args):
     failures = []
     if args.all:
         words = w.word_list()
+    elif args.word:
+        words = itertools.repeat(args.word, args.num_games)
     else:
-        if args.word:
-            words = itertools.repeat(args.word, args.num_games)
-        else:
-            words = random.choices(w.word_list(), k=args.num_games)
+        words = random.choices(w.word_list(), k=args.num_games)
     for game, word in enumerate(words):
         print(f"Game {game+1}:{word}")
         result, guess_num = play_game(w, word, args.debug)
