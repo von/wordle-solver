@@ -1,0 +1,3 @@
+# Words to add
+# Currently empty
+# vim:set nospell:

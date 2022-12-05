@@ -168,6 +168,23 @@ class Wordle:
             print(f"Read {len(words)} words from {dict}")
 
         try:
+            # Words to add
+            add_words_path = os.path.join(os.path.dirname(__file__),
+                                          'additional-words.txt')
+            with open(add_words_path) as f:
+                add_words = [s.strip() for s in f.readlines()]
+        except FileNotFoundError:
+            raise RuntimeError("additional-words.txt not found")
+        add_words = list(itertools.filterfalse(comment_regex.search,
+                                               add_words))
+        if self.debug:
+            print(f"Read {len(add_words)} additional words"
+                  f" from {add_words_path}")
+        for w in add_words:
+            if w not in words:
+                words.append(w)
+
+        try:
             # Words that NYT Wordle doesn't accept
             non_words_path = os.path.join(os.path.dirname(__file__),
                                           'non-words.txt')
@@ -175,20 +192,11 @@ class Wordle:
                 non_words = [s.strip() for s in f.readlines()]
         except FileNotFoundError:
             raise RuntimeError("non-words.txt not found")
-
-        # Remove comments from non-words.txt
-        reg = re.compile(r"^#")
-        non_words = list(itertools.filterfalse(reg.search, non_words))
+        non_words = list(itertools.filterfalse(comment_regex.search,
+                                               non_words))
         if self.debug:
             print(f"Read {len(non_words)} non-words from {non_words_path}")
 
-        def filt(w):
-            return (len(w) == 5 and
-                    # Remove proper nouns
-                    w[0] in string.ascii_lowercase and
-                    # Remove words NYT doesn't consider words
-                    w not in non_words)
-        words = list(filter(filt, words))
         if self.debug:
             print(f"Returning {len(words)} words")
         return words
