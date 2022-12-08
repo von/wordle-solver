@@ -12,6 +12,7 @@ import statistics
 import string
 import sys
 
+import wordfreq
 from wordfreq import zipf_frequency
 
 
@@ -152,20 +153,24 @@ class Wordle:
 
     guess_limit = 6
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, threshold=3.0):
         self.debug = debug
+        self.threshold = threshold
 
     @functools.cache
     def word_list(self):
         """Load and return a list of words"""
-        try:
-            dict = "/usr/share/dict/words"
-            with open(dict) as f:
-                words = [s.strip() for s in f.readlines()]
-        except FileNotFoundError:
-            raise RuntimeError(f"Dictionary {dict} not found")
+        # Remove comments from additional-words.txt and non-words.txt
+        comment_regex = re.compile(r"^#")
+
+        words = [w for w in
+                 itertools.takewhile(
+                     lambda w: zipf_frequency(w, "en") >= self.threshold,
+                     wordfreq.iter_wordlist("en"))
+                 if (len(w) == 5 and
+                     all([c in string.ascii_lowercase for c in w]))]
         if self.debug:
-            print(f"Read {len(words)} words from {dict}")
+            print(f"Read {len(words)} words from wordfreq")
 
         try:
             # Words to add
@@ -519,6 +524,10 @@ def make_argparser():
     verbosity_group.add_argument("-q", "--quiet",
                                  action="store_true", default=False,
                                  help="run quietly")
+
+    parser.add_argument("-t", "--threshold",
+                        action="store", type=float, default=3.0,
+                        help="zipf_frequency() threshold for words to include")
     parser.add_argument("--version", action="version", version="%(prog)s 1.0")
 
     subparsers = parser.add_subparsers(help='sub-command help')
@@ -640,7 +649,7 @@ def cmd_assist(w, args):
 def main(argv=None):
     parser = make_argparser()
     args = parser.parse_args(argv if argv else sys.argv[1:])
-    w = Wordle(debug=args.debug)
+    w = Wordle(debug=args.debug, threshold=args.threshold)
     return args.func(w, args)
 
 
