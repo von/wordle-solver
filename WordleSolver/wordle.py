@@ -3,6 +3,7 @@
 import argparse
 import cmd
 import collections
+import copy
 import functools
 import itertools
 import os
@@ -26,6 +27,26 @@ class Colors:
     cyan = "\033[36m"
     white = "\033[37m"
     reset = "\033[0m"
+
+
+class WordleError(RuntimeError):
+    """Base class for module errors."""
+    pass
+
+
+class InvalidSolverStateError(WordleError):
+    """Guess caused solver to go into invalid state."""
+    pass
+
+
+class InvalidWordError(WordleError):
+    """Provided word illegal (wrong length or invalid characters)."""
+    pass
+
+
+class InvalidResponseError(WordleError):
+    """Provided response illegal (wrong length or invalid characters)."""
+    pass
 
 
 class AssistCmd(cmd.Cmd):
@@ -77,22 +98,19 @@ class AssistCmd(cmd.Cmd):
 
     def default(self, line):
         words = line.split()
-        if len(words) == 1 and self.last_guess:
-            try:
-                self.s.process_response(self.last_guess, words[0])
-            except RuntimeError as e:
-                print(f"Error: {e}")
-                return
-        elif len(words) == 2:
-            try:
-                self.s.process_response(words[0], words[1])
-            except RuntimeError as e:
-                print(f"Error: {e}")
-                return
-        else:
-            return super().default(line)
-        self.s.update_possible_words()
-        self.s.update_letter_freq()
+        try:
+            if len(words) == 1 and self.last_guess:
+                self.s.handle_response(self.last_guess, words[0])
+            elif len(words) == 2:
+                self.s.handle_response(words[0], words[1])
+            else:
+                return super().default(line)
+        except InvalidSolverStateError as e:
+            print(f"Invalid response: {e}")
+            return
+        except WordleError as e:
+            print(f"Error: {e}")
+            return
         p = len(self.s.possible)
         if p < 10:
             print(f"{p} possible word{'s' if p > 1 else ''} : " +
@@ -113,7 +131,7 @@ class PlayCmd(cmd.Cmd):
         self.guess_num = 1
         if word:
             if len(word) != 5:
-                raise RuntimeError(f"Length of {word} != 5")
+                raise InvalidWordError(f"Length of {word} != 5")
             self.word = word
         else:
             self.word = random.choice(self.w.word_list())
@@ -179,7 +197,7 @@ class Wordle:
             with open(add_words_path) as f:
                 add_words = [s.strip() for s in f.readlines()]
         except FileNotFoundError:
-            raise RuntimeError("additional-words.txt not found")
+            raise WordleError("additional-words.txt not found")
         add_words = list(itertools.filterfalse(comment_regex.search,
                                                add_words))
         if self.debug:
@@ -196,7 +214,7 @@ class Wordle:
             with open(non_words_path) as f:
                 non_words = [s.strip() for s in f.readlines()]
         except FileNotFoundError:
-            raise RuntimeError("non-words.txt not found")
+            raise WordleError("non-words.txt not found")
         non_words = list(itertools.filterfalse(comment_regex.search,
                                                non_words))
         if self.debug:
@@ -295,6 +313,20 @@ class Solver:
         # Create self.letters[*]["freq"]
         self.update_letter_freq()
 
+    def backup_state(self):
+        """Return a dictionary suitable for restore_state()"""
+        backup = {}
+        backup["possible"] = copy.copy(self.possible)
+        backup["known_letters"] = copy.copy(self.known_letters)
+        backup["letters"] = copy.deepcopy(self.letters)
+        return backup
+
+    def restore_state(self, backup):
+        """Restore a backup created by backup_state()"""
+        self.possible = copy.copy(backup["possible"])
+        self.known_letters = copy.copy(backup["known_letters"])
+        self.letters = copy.deepcopy(backup["letters"])
+
     # Create filters as closures to force early binding
     # See https://docs.python-guide.org/writing/gotchas/#late-binding-closures
     @staticmethod
@@ -341,7 +373,7 @@ class Solver:
         self.possible = [w for w in self.possible
                          if all([f(w) for f in filters])]
         if len(self.possible) == 0:
-            raise RuntimeError("No possible words.")
+            raise InvalidSolverStateError("No possible words.")
         if len(self.possible) > 1:
             # Check for any letters we can infer from the fact they
             # appear at a given index in all possible words.
@@ -425,6 +457,22 @@ class Solver:
                 print(f"Last guess, {guess} is most common.")
             return guess
 
+    def handle_response(self, word, response):
+        """Handle a reponse to a word
+
+        word is a five-letter word
+        response is five characters: G, Y, or -"""
+        backup = self.backup_state()
+        try:
+            self.process_response(word, response)
+            self.update_possible_words()
+            self.update_letter_freq()
+        except InvalidSolverStateError as e:
+            self.restore_state(backup)
+            raise e
+        except WordleError as e:
+            raise e
+
     def process_response(self, word, response):
         """Process a reponse to a word
 
@@ -433,14 +481,16 @@ class Solver:
         # Validate work and response and split into letters
         letters = list(word.lower())
         if len(letters) != 5:
-            raise RuntimeError(f"Illegal length for word: {word}")
+            raise InvalidWordError(f"Illegal length for word: {word}")
         if any([c not in string.ascii_lowercase for c in letters]):
-            raise RuntimeError(f"Illegal characters in word: {word}")
+            raise InvalidWordError(f"Illegal characters in word: {word}")
         responses = list(response.upper())
         if len(responses) != 5:
-            raise RuntimeError(f"Illegal length for response: {response}")
+            raise InvalidResponseError(
+                f"Illegal length for response: {response}")
         if any([r not in "GY-" for r in responses]):
-            raise RuntimeError(f"Illegal character in response: {response}")
+            raise InvalidResponseError(
+                f"Illegal character in response: {response}")
 
         # Handle Green and Yellow results telling us certain places
         # must or must not be certain letters
@@ -448,9 +498,10 @@ class Solver:
             if responses[i] == "G":
                 if self.known_letters[i]:
                     if self.known_letters[i] != c:
-                        raise RuntimeError("Conflicting response: "
-                                           f" characyer at {i} already =="
-                                           f" {self.known_letters[i]}")
+                        raise InvalidSolverStateError(
+                            "Conflicting response: "
+                            f" characyer at {i} already =="
+                            f" {self.known_letters[i]}")
                     # Letter already known
                     continue
                 self.known_letters[i] = c
@@ -573,9 +624,7 @@ def cmd_play(w, args):
 def cmd_process(w, args):
     """Process a guess and response"""
     s = w.solver()
-    s.process_response(args.word[0], args.result[0])
-    s.update_possible_words()
-    s.update_letter_freq()
+    s.handle_response(args.word[0], args.result[0])
     print("\n".join(list(s.possible)))
     return(0)
 
@@ -595,9 +644,7 @@ def play_game(w, word, debug=False):
             return True, guess_num+1
         if debug:
             print(f"   ...response: {w.colorize_reponse(response)}")
-        s.process_response(guess, response)
-        s.update_possible_words()
-        s.update_letter_freq()
+        s.handle_response(guess, response)
         if debug:
             if len(s.possible) < 10:
                 print(f"   ...{len(s.possible)} left: {' '.join(s.possible)}")
