@@ -222,6 +222,12 @@ class Wordle:
                                                non_words))
         if self.debug:
             print(f"Read {len(non_words)} non-words from {non_words_path}")
+        for w in non_words:
+            try:
+                words.remove(w)
+            except ValueError:
+                # Ignore non-words not in list
+                pass
 
         if self.debug:
             print(f"Returning {len(words)} words")
