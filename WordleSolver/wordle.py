@@ -181,8 +181,6 @@ class Wordle:
     @functools.cache
     def word_list(self):
         """Load and return a list of words"""
-        # Remove comments from additional-words.txt and non-words.txt
-        comment_regex = re.compile(r"^#")
 
         words = [w for w in
                  itertools.takewhile(
@@ -193,8 +191,29 @@ class Wordle:
         if self.debug:
             print(f"Read {len(words)} words from wordfreq")
 
+        add_words = self.read_additional_words()
+        for w in add_words:
+            if w not in words:
+                words.append(w)
+
+        non_words = self.read_non_words()
+        for w in non_words:
+            try:
+                words.remove(w)
+            except ValueError:
+                # Ignore non-words not in list
+                pass
+
+        if self.debug:
+            print(f"Returning {len(words)} words")
+        return words
+
+    def read_additional_words(self):
+        """Read list of words to add to wordfreq list"""
+        # Remove comments from additional-words.txt and non-words.txt
+        comment_regex = re.compile(r"^#")
+
         try:
-            # Words to add
             add_words_path = os.path.join(os.path.dirname(__file__),
                                           'additional-words.txt')
             with open(add_words_path) as f:
@@ -206,12 +225,16 @@ class Wordle:
         if self.debug:
             print(f"Read {len(add_words)} additional words"
                   f" from {add_words_path}")
-        for w in add_words:
-            if w not in words:
-                words.append(w)
+        return add_words
+
+    def read_non_words(self):
+        """Read list of words to remove from wordfreq list
+
+        Basically, words the NYT doesn't accept."""
+        # Remove comments from additional-words.txt and non-words.txt
+        comment_regex = re.compile(r"^#")
 
         try:
-            # Words that NYT Wordle doesn't accept
             non_words_path = os.path.join(os.path.dirname(__file__),
                                           'non-words.txt')
             with open(non_words_path) as f:
@@ -222,16 +245,7 @@ class Wordle:
                                                non_words))
         if self.debug:
             print(f"Read {len(non_words)} non-words from {non_words_path}")
-        for w in non_words:
-            try:
-                words.remove(w)
-            except ValueError:
-                # Ignore non-words not in list
-                pass
-
-        if self.debug:
-            print(f"Returning {len(words)} words")
-        return words
+        return non_words
 
     @staticmethod
     def generate_response(word, guess):
