@@ -52,6 +52,7 @@ kafiz
 kumbi
 kusam
 lendl
+lexie
 lindt
 lithy
 luton
@@ -93,5 +94,6 @@ wakif
 whalp
 whank
 yabbi
+yeezy
 zimmi
 # vim:set nospell:
