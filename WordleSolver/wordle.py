@@ -171,9 +171,12 @@ class Wordle:
 
     guess_limit = 6
 
-    def __init__(self, debug=False, threshold=3.0):
+    # Seems to get all NYT solutions
+    default_threshold = 2.0
+
+    def __init__(self, debug=False, threshold=None):
         self.debug = debug
-        self.threshold = threshold
+        self.threshold = threshold or self.default_threshold
 
     @functools.cache
     def word_list(self):
@@ -577,7 +580,7 @@ def make_argparser():
                                  help="run quietly")
 
     parser.add_argument("-t", "--threshold",
-                        action="store", type=float, default=3.0,
+                        action="store", type=float, default=None,
                         help="zipf_frequency() threshold for words to include")
     parser.add_argument("--version", action="version", version="%(prog)s 1.0")
 
