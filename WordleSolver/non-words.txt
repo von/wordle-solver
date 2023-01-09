@@ -63,6 +63,8 @@ lendl
 lexie
 lindt
 lithy
+longo
+loong
 luton
 macco
 mmhmm
