@@ -1,4 +1,5 @@
 adlet
+aires
 alani
 altin
 ampyx
@@ -54,6 +55,7 @@ inuit
 iview
 izote
 katha
+knott
 konan
 kafiz
 korea
