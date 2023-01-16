@@ -452,9 +452,11 @@ class Solver:
             if self.debug:
                 print("Down to only one possible solution.")
             return self.possible[0]
-        elif Wordle.guess_limit - guess_num >= len(self.possible):
+        elif Wordle.guess_limit - guess_num + 1 >= len(self.possible):
             # We have at least as many guesses as possible words, so we know
             # we will solve so guess based on word frequency.
+            # (The '+1' handles if we are on guess #4, we have 3 guesses
+            # not 2.)
             guess = max(self.possible, key=lambda w: self.wordle.word_freq(w))
             if self.debug:
                 print(f"Guessing {guess} based on frequency.")
