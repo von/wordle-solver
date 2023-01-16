@@ -189,7 +189,8 @@ class Wordle:
                  if (len(w) == 5 and
                      all([c in string.ascii_lowercase for c in w]))]
         if self.debug:
-            print(f"Read {len(words)} words from wordfreq")
+            print(f"Read {len(words)} words from wordfreq"
+                  f" at threshold {self.threshold}")
 
         add_words = self.read_additional_words()
         for w in add_words:
