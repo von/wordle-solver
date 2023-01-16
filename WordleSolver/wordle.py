@@ -172,7 +172,7 @@ class Wordle:
     guess_limit = 6
 
     # Seems to get all NYT solutions
-    default_threshold = 2.0
+    default_threshold = 2.2
 
     def __init__(self, debug=False, threshold=None):
         self.debug = debug
