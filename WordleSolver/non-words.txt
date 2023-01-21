@@ -22,6 +22,7 @@ cacam
 caffa
 cheve
 chold
+chung
 cohol
 coyol
 dadap
@@ -41,6 +42,8 @@ engel
 engle
 erisa
 ethel
+eugen
+feuer
 ffvii
 glaky
 glink
@@ -66,15 +69,21 @@ kafiz
 korea
 kumbi
 kusam
+landy
 lendl
 lexie
 lindt
 lithy
 longo
 loong
+lundy
 luton
+lydon
+lynda
 macco
 matta
+mckim
+mcnab
 miata
 mmhmm
 mmmmm
@@ -97,6 +106,7 @@ ooooo
 oromo
 owght
 pombo
+puget
 rokee
 padge
 phoby
@@ -105,6 +115,7 @@ skeeg
 skewl
 soooo
 taled
+teemu
 tungo
 twalt
 twant
