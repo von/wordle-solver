@@ -60,6 +60,7 @@ class AssistCmd(cmd.Cmd):
         self.s = solver
         self.guess_num = 1
         self.last_guess = None
+        self.update_prompt()
 
     def do_list(self, arg):
         """List all possible words"""
@@ -118,6 +119,13 @@ class AssistCmd(cmd.Cmd):
         else:
             print(f"{p} possible words")
         self.guess_num += 1
+
+    def postcmd(self, stop, line):
+        self.update_prompt()
+        return stop
+
+    def update_prompt(self):
+        self.prompt = f"Guess #{self.guess_num} > "
 
 
 class PlayCmd(cmd.Cmd):
