@@ -2,6 +2,7 @@ adlet
 aires
 alani
 altin
+alton
 ampyx
 arara
 aries
@@ -12,6 +13,7 @@ azoxy
 bahay
 banff
 befop
+belen
 bensh
 beode
 bichy
@@ -26,6 +28,7 @@ chold
 chung
 cohol
 coyol
+cylon
 dadap
 decap
 dhabb
@@ -124,6 +127,7 @@ skewl
 soooo
 taled
 teemu
+thoth
 tungo
 twalt
 twant
