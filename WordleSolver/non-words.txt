@@ -80,10 +80,13 @@ katha
 knott
 konan
 kafiz
+klopp
+knapp
 korea
 krupp
 kumbi
 kusam
+kvyat
 kwame
 kwang
 kwara
@@ -94,6 +97,7 @@ lendl
 lexie
 lindt
 lithy
+lloyd
 londo
 longo
 loong
@@ -130,10 +134,13 @@ ooooo
 oromo
 owght
 pekka
+phill
 pombo
+popov
 puget
 rokee
 padge
+patek
 phoby
 plath
 punct
@@ -158,6 +165,7 @@ upbid
 upmix
 utchy
 vedro
+vikki
 volvo
 wakif
 whalp
