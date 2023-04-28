@@ -22,6 +22,7 @@ bensh
 beode
 bhatt
 bichy
+bloch
 bluth
 blyth
 bucky
@@ -37,6 +38,7 @@ chold
 chung
 clwyd
 cohol
+cotto
 coyol
 cueto
 cuoco
@@ -87,6 +89,7 @@ heuer
 hmmmm
 hunan
 hoggy
+ifttt
 iiiii
 indyl
 inuit
@@ -113,6 +116,7 @@ landa
 landy
 lendl
 lexie
+likud
 lindt
 lithy
 lloyd
@@ -179,6 +183,7 @@ twalt
 twant
 ughhh
 uhhhh
+uluru
 ummmm
 unbow
 uninn
@@ -195,6 +200,7 @@ vikki
 volvo
 wakif
 webmd
+wendt
 whalp
 whank
 woooo
