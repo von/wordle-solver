@@ -8,10 +8,12 @@ alton
 ampyx
 anand
 angus
+april
 arara
 aries
 artar
 attid
+avril
 awwww
 azoxy
 bahay
@@ -32,6 +34,8 @@ butic
 cacam
 caffa
 capua
+chaka
+chama
 cheng
 cheve
 chold
@@ -125,6 +129,8 @@ longo
 loong
 lundy
 luton
+lyall
+lyell
 lydon
 lynda
 macau
@@ -136,6 +142,7 @@ miata
 minsk
 mmhmm
 mmmmm
+msnbc
 mtdna
 mumma
 mundt
